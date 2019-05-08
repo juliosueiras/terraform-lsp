@@ -9,7 +9,8 @@ require (
 	github.com/google/go-cmp v0.3.0
 	github.com/hashicorp/go-version v1.2.0
 	github.com/hashicorp/hcl2 v0.0.0-20190503213020-640445e16309
-	github.com/hashicorp/terraform v0.11.13
+	github.com/hashicorp/terraform v0.12.0-rc1
+	github.com/mitchellh/go-homedir v1.0.0
 	github.com/mitchellh/go-wordwrap v1.0.0
 	github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20190106185902-35a74f039c6a

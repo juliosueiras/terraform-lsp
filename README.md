@@ -43,6 +43,8 @@ This is LSP(Language Server Protocol) for Terraform
 - [X] Provider Configs
 - [X] Resources
 - [X] Data Sources
+- [ ] Backends
+- [ ] Provisioner
 - [ ] Interpolations
   - Complex nesting interpolations
 - [ ] Modules
