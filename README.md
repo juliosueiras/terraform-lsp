@@ -40,6 +40,7 @@ This is LSP(Language Server Protocol) for Terraform
 
 ## Todo-List (Terraform)
 
+- [ ] Add Provider Listing(static list)
 - [X] Provider Configs
 - [X] Resources
 - [X] Data Sources
