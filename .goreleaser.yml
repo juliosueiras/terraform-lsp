@@ -1,7 +1,4 @@
 project_name: terraform-lsp
-before:
-  hooks:
-    - go mod download
 release:
   github:
     owner: juliosueiras
@@ -20,6 +17,9 @@ scoop:
     email: goreleaser@carlosbecker.com
   url_template: https://github.com/juliosueiras/terraform-lsp/releases/download/{{
     .Tag }}/{{ .ArtifactName }}
+before:
+  hooks:
+    - go mod download
 builds:
 - goos:
   - linux
