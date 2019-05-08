@@ -20,6 +20,8 @@ This is LSP(Language Server Protocol) for Terraform
     + [Others](#others)
   * [Bugs](#bugs)
 
+[![asciicast](https://asciinema.org/a/245075.svg)](https://asciinema.org/a/245075)
+
 ## Currently Supported
 
 - Variables complex completion(infinite nesting type)
