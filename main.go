@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	//"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -21,14 +20,17 @@ import (
 	//"github.com/minamijoyo/tfschema/tfschema"
 	"github.com/juliosueiras/terraform-lsp/hclstructs"
 	"github.com/juliosueiras/terraform-lsp/helper"
+	"github.com/juliosueiras/terraform-lsp/tfstructs"
 	"github.com/sourcegraph/go-lsp"
 )
 
 var tempFile *os.File
 
+var Server *jrpc2.Server
+
 func Initialize(ctx context.Context, vs lsp.InitializeParams) (lsp.InitializeResult, error) {
 
-	file, err := ioutil.TempFile("/tmp", "prefix")
+	file, err := ioutil.TempFile("", "tf-lsp-")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,7 +51,7 @@ func Initialize(ctx context.Context, vs lsp.InitializeParams) (lsp.InitializeRes
 			},
 			//			HoverProvider:             true,
 			//			DocumentSymbolProvider:    true,
-			//			ReferencesProvider:        true,
+			//ReferencesProvider: true,
 			//			DefinitionProvider:        true,
 			//			DocumentHighlightProvider: true,
 			//			CodeActionProvider:        true,
@@ -61,117 +63,105 @@ func Initialize(ctx context.Context, vs lsp.InitializeParams) (lsp.InitializeRes
 func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.CompletionList, error) {
 	parser := configs.NewParser(nil)
 
-	fileUrl := strings.Replace(string(vs.TextDocument.URI), "file://", "", 1)
-	file2, _ := parser.LoadConfigFile(filepath.Dir(fileUrl) + "/test2.tf")
+	fileURL := strings.Replace(string(vs.TextDocument.URI), "file://", "", 1)
+
+	fileDir := filepath.Dir(fileURL)
+	res, _ := filepath.Glob(fileDir + "/*.tf")
 	var file *configs.File
+	var resultFiles []*configs.File
+
+	for _, v := range res {
+		if fileURL == v {
+			continue
+		}
+
+		cFile, _ := parser.LoadConfigFile(v)
+
+		resultFiles = append(resultFiles, cFile)
+	}
 
 	column := -1
 	var diags hcl.Diagnostics
-	if val, valDiags, isDot := helper.CheckAndGetConfig(parser, tempFile, vs.Position.Line+1, vs.Position.Character); isDot {
-		diags = diags
-		file = val
-		column = vs.Position.Character - 1
-	} else {
-		diags = valDiags
-		file = val
-		column = vs.Position.Character
-	}
+	var hclFile *hclsyntax.Body
+	file, diags, column, hclFile = helper.CheckAndGetConfig(parser, tempFile, vs.Position.Line+1, vs.Position.Character)
 
-	helper.DumpLog(diags)
+	resultFiles = append(resultFiles, file)
+
+	files, diags := configs.NewModule(resultFiles, nil)
 
 	fileText, _ := ioutil.ReadFile(tempFile.Name())
 	pos := helper.FindOffset(string(fileText), vs.Position.Line+1, column)
 
-	//spew.Dump(err)
-
-	var config *hclsyntax.Body
-
-	for _, v := range file.ManagedResources {
-		config = v.Config.(interface{}).(*hclsyntax.Body)
-	}
-
 	var result []lsp.CompletionItem
-
-	if diags != nil || config == nil {
-		helper.DumpLog(diags[0].Subject)
-		return lsp.CompletionList{
-			IsIncomplete: false,
-			Items:        []lsp.CompletionItem{},
-		}, nil
-	}
 
 	posHCL := hcl.Pos{
 		Byte: pos,
 	}
 
-	expr := config.OutermostExprAtPos(posHCL)
+	if r, found, _ := tfstructs.GetTypeCompletion(result, fileDir, hclFile, posHCL); found {
+		helper.DumpLog("Found Type Completion")
+		return r, nil
+	}
 
-	attr := config.AttributeAtPos(posHCL)
-	helper.DumpLog(attr)
-	helper.DumpLog(expr)
+	config, origConfig, configType := tfstructs.GetConfig(file, posHCL)
 
-	var variables []hcl.Traversal
+	if diags != nil || config == nil {
+		helper.DumpLog("With Error or No Config")
+		helper.DumpLog(diags)
 
-	if expr == nil {
 		return lsp.CompletionList{
 			IsIncomplete: false,
-			Items:        []lsp.CompletionItem{},
+			Items:        tfstructs.GetTopLevelCompletion(),
 		}, nil
 	}
 
-	origType := reflect.TypeOf(expr)
+	expr := config.OutermostExprAtPos(posHCL)
+	attr := config.AttributeAtPos(posHCL)
+	blocks := config.BlocksAtPos(posHCL)
 
-	if origType == hclstructs.BinaryOpExpr() {
-		expr := expr.(*hclsyntax.BinaryOpExpr)
-		if expr.LHS.Range().ContainsPos(posHCL) {
-			variables = expr.LHS.Variables()
-		} else if expr.RHS.Range().ContainsPos(posHCL) {
-			variables = expr.RHS.Variables()
+	if expr == nil && attr == nil && blocks == nil {
+		if r, found, _ := tfstructs.GetAttributeCompletion(result, configType, origConfig, fileDir); found {
+			return r, nil
 		}
-	} else if origType == hclstructs.FunctionCallExpr() {
-		expr := expr.(*hclsyntax.FunctionCallExpr)
-		for _, arg := range expr.ExprCall().Arguments {
-			if arg.Range().ContainsPos(posHCL) {
-				variables = arg.Variables()
+	}
+
+	// Block is Block, not resources
+	//test := config.BlocksAtPos(posHCL)
+	//helper.DumpLog(test)
+	if blocks != nil && attr == nil {
+		if r, found, _ := tfstructs.GetNestingCompletion(blocks, result, configType, origConfig, fileDir); found {
+			return r, nil
+		}
+	}
+
+	if expr != nil {
+		origType := reflect.TypeOf(expr)
+		if origType != hclstructs.ObjectConsExpr() {
+			variables := hclstructs.GetExprVariables(origType, expr, posHCL)
+
+			if len(variables) != 0 {
+				if variables[0].RootName() == "var" {
+					vars := variables[0]
+
+					result = helper.ParseVariables(vars[1:], files.Variables, result)
+				}
+
+				return lsp.CompletionList{
+					IsIncomplete: false,
+					Items:        result,
+				}, nil
+			}
+		} else {
+			if blocks == nil && attr != nil {
+				if r, found, _ := tfstructs.GetNestingAttributeCompletion(attr, result, configType, origConfig, fileDir, posHCL); found {
+					return r, nil
+				}
 			}
 		}
-	} else {
-		variables = expr.Variables()
 	}
+
 	//spew.Dump(config)
-	if variables[0].RootName() == "var" {
-		vars := variables[0]
-		result = helper.ParseVariables(vars[1:], append(file.Variables, file2.Variables...), result)
-	}
 
-	//dumpLog(file2)
-	//pos := hcl.Pos{
-	//	Line:   vs.Position.Line + 1,
-	//	Column: vs.Position.Character,
-	//	Byte:   100,
-	//}
-
-	// //resourceType := file.ManagedResources[-1].Type
-	// //file.ManagedResources[0].Config.Content(
-
-	// provider, err := tfschema.NewClient(strings.Split(resourceType, "_")[0])
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// //	//
-	// provider_resource, err := provider.GetRawResourceTypeSchema(file.ManagedResources[0].Type)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// //fmt.Println(provider_resource.Block)
-	// //spew.Dump(file.ProviderConfigs)
-	// //
-	// res2 := provider_resource.Block.DecoderSpec()
-	// res, diags := hcldec.Decode(file.ManagedResources[0].Config, res2, nil)
-
-	// file.ManagedResources[0].Config.BlocksAtPos
-	// dumpLog(res)
-	// dumpLog(diags)
 	return lsp.CompletionList{
 		IsIncomplete: false,
 		Items:        result,
@@ -183,10 +173,26 @@ func TextDocumentDidChange(ctx context.Context, vs lsp.DidChangeTextDocumentPara
 	tempFile.Truncate(0)
 	tempFile.Seek(0, 0)
 	tempFile.Write([]byte(vs.ContentChanges[0].Text))
+	fileURL := strings.Replace(string(vs.TextDocument.URI), "file://", "", 1)
+	DiagsFiles[fileURL] = tfstructs.GetDiagnostics(tempFile.Name(), fileURL)
+
+	TextDocumentPublishDiagnostics(Server, ctx, lsp.PublishDiagnosticsParams{
+		URI:         vs.TextDocument.URI,
+		Diagnostics: DiagsFiles[fileURL],
+	})
 	return nil
 }
 
+var DiagsFiles = make(map[string][]lsp.Diagnostic)
+
 func TextDocumentDidOpen(ctx context.Context, vs lsp.DidOpenTextDocumentParams) error {
+	fileURL := strings.Replace(string(vs.TextDocument.URI), "file://", "", 1)
+	DiagsFiles[fileURL] = tfstructs.GetDiagnostics(fileURL, fileURL)
+
+	TextDocumentPublishDiagnostics(Server, ctx, lsp.PublishDiagnosticsParams{
+		URI:         vs.TextDocument.URI,
+		Diagnostics: DiagsFiles[fileURL],
+	})
 	tempFile.Write([]byte(vs.TextDocument.Text))
 	return nil
 }
@@ -204,16 +210,64 @@ func CancelRequest(ctx context.Context, vs lsp.CancelParams) error {
 	return nil
 }
 
+//func TextDocumentCodeLens(ctx context.Context, vs lsp.CodeLensParams) ([]lsp.CodeLens, error) {
+//	return []lsp.CodeLens{
+//		lsp.CodeLens{
+//			Range: lsp.Range{
+//				Start: lsp.Position{
+//					Line:      7,
+//					Character: 1,
+//				},
+//				End: lsp.Position{
+//					Line:      7,
+//					Character: 1,
+//				},
+//			},
+//			Command: lsp.Command{
+//				Title:   "References",
+//				Command: "test",
+//			},
+//		},
+//	}, nil
+//}
+
+//func TextDocumentReferences(ctx context.Context, vs lsp.ReferenceParams) ([]lsp.Location, error) {
+//	return []lsp.Location{
+//		lsp.Location{
+//			URI: vs.TextDocument.URI,
+//			Range: lsp.Range{
+//				Start: lsp.Position{
+//					Line:      3,
+//					Character: 1,
+//				},
+//				End: lsp.Position{
+//					Line:      3,
+//					Character: 3,
+//				},
+//			},
+//		},
+//	}, nil
+//}
+
+func TextDocumentPublishDiagnostics(server *jrpc2.Server, ctx context.Context, vs lsp.PublishDiagnosticsParams) error {
+
+	return server.Push(ctx, "textDocument/publishDiagnostics", vs)
+}
+
 func main() {
-	s := jrpc2.NewServer(handler.Map{
+	Server = jrpc2.NewServer(handler.Map{
 		"initialize":              handler.New(Initialize),
 		"textDocument/completion": handler.New(TextDocumentComplete),
 		"textDocument/didChange":  handler.New(TextDocumentDidChange),
 		"textDocument/didOpen":    handler.New(TextDocumentDidOpen),
 		"textDocument/didClose":   handler.New(TextDocumentDidClose),
-		"exit":                    handler.New(Exit),
-		"$/cancelRequest":         handler.New(CancelRequest),
-	}, nil)
+		//"textDocument/references": handler.New(TextDocumentReferences),
+		//"textDocument/codeLens": handler.New(TextDocumentCodeLens),
+		"exit":            handler.New(Exit),
+		"$/cancelRequest": handler.New(CancelRequest),
+	}, &jrpc2.ServerOptions{
+		AllowPush: true,
+	})
 
 	f, err := os.OpenFile("tf-lsp.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
@@ -222,11 +276,11 @@ func main() {
 	defer f.Close()
 	log.SetOutput(f)
 	// Start the server on a channel comprising stdin/stdout.
-	s.Start(channel.Header("")(os.Stdin, os.Stdout))
+	Server.Start(channel.Header("")(os.Stdin, os.Stdout))
 	log.Print("Server started")
 
 	// Wait for the server to exit, and report any errors.
-	if err := s.Wait(); err != nil {
+	if err := Server.Wait(); err != nil {
 		log.Printf("Server exited: %v", err)
 	}
 
