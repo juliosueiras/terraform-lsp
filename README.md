@@ -104,6 +104,7 @@ This is LSP(Language Server Protocol) for Terraform
 
 ## Bugs
 - Order of completion items
+- Issue with block 
 
 ## Credits
 - LSP structure using [Sourcegraph's go-lsp](https://github.com/sourcegraph/go-lsp)

@@ -1,4 +1,7 @@
 project_name: terraform-lsp
+before:
+  hooks:
+    - go mod download
 release:
   github:
     owner: juliosueiras
