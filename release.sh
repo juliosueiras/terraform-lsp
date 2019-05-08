@@ -1,5 +1,5 @@
 docker run --rm --privileged \
-  -env GITHUB_TOKEN=$GITHUB_TOKEN \
+  -e GITHUB_TOKEN=$GITHUB_TOKEN \
   -v $PWD:/go/src/github.com/juliosueiras/terraform-lsp \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -w /go/src/github.com/juliosueiras/terraform-lsp \
