@@ -1,3 +1,4 @@
+// Mostly adapted from tfschema - https://github.com/minamijoyo/tfschema
 package tfstructs
 
 import (
