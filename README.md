@@ -62,7 +62,7 @@ This is LSP(Language Server Protocol) for Terraform
   - [ ] Functions
 
 - [ ] Dynamic Block
-  - Block
+  - [ ] For Each Block
 
 ## Todo-List (LSP)
 
@@ -114,4 +114,4 @@ This is LSP(Language Server Protocol) for Terraform
 ## Credits
 - LSP structure using [Sourcegraph's go-lsp](https://github.com/sourcegraph/go-lsp)
 - JSONRPC2 using [JRPC2](https://bitbucket.org/creachadair/jrpc2)
-- (provider communication)[./tfstructs/provider.go] is mostly adapted from [tfschema](https://github.com/minamijoyo/tfschema)
+- [provider communication](./tfstructs/provider.go) is mostly adapted from [tfschema](https://github.com/minamijoyo/tfschema)
