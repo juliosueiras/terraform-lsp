@@ -82,6 +82,47 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 	//	helper.DumpLog(diags3)
 	//	helper.DumpLog(result2)
 	//	helper.DumpLog(config)
+	for _, v := range cfg.ProviderConfigs {
+		providerType := v.Name
+
+		tfSchema := GetProviderSchema(providerType, v.Config, filepath.Dir(originalFile))
+
+		if tfSchema != nil {
+			for _, diag := range tfSchema.Diags {
+				result = append(result, lsp.Diagnostic{
+					Severity: lsp.DiagnosticSeverity(diag.Severity),
+					Message:  diag.Detail,
+					Range: lsp.Range{
+						Start: lsp.Position{
+							Line:      diag.Subject.Start.Line - 1,
+							Character: diag.Subject.Start.Column - 1,
+						},
+						End: lsp.Position{
+							Line:      diag.Subject.End.Line - 1,
+							Character: diag.Subject.End.Column - 1,
+						},
+					},
+					Source: "Terraform Schema",
+				})
+			}
+		} else {
+			result = append(result, lsp.Diagnostic{
+				Severity: lsp.DiagnosticSeverity(lsp.Error),
+				Message:  fmt.Sprintf("Provider %s does not exist", v.Name),
+				Range: lsp.Range{
+					Start: lsp.Position{
+						Line:      v.NameRange.Start.Line - 1,
+						Character: v.NameRange.Start.Column - 1,
+					},
+					End: lsp.Position{
+						Line:      v.NameRange.End.Line - 1,
+						Character: v.NameRange.End.Column - 1,
+					},
+				},
+				Source: "Terraform Schema",
+			})
+		}
+	}
 
 	for _, v := range cfg.ManagedResources {
 		resourceType := v.Type
@@ -103,7 +144,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 							Character: diag.Subject.End.Column - 1,
 						},
 					},
-					Source: "Terraform",
+					Source: "Terraform Schema",
 				})
 			}
 		} else {
@@ -120,7 +161,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 						Character: v.TypeRange.End.Column - 1,
 					},
 				},
-				Source: "Terraform",
+				Source: "Terraform Schema",
 			})
 		}
 	}

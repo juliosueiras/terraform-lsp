@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"bitbucket.org/creachadair/jrpc2/handler"
 	"github.com/hashicorp/hcl2/hcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
+	"github.com/hashicorp/terraform/lang"
 	//"github.com/hashicorp/hcl2/hcldec"
 	"github.com/hashicorp/terraform/configs"
 	//"github.com/hashicorp/terraform/providers"
@@ -22,6 +24,7 @@ import (
 	"github.com/juliosueiras/terraform-lsp/helper"
 	"github.com/juliosueiras/terraform-lsp/tfstructs"
 	"github.com/sourcegraph/go-lsp"
+	"github.com/zclconf/go-cty/cty"
 )
 
 var tempFile *os.File
@@ -49,7 +52,7 @@ func Initialize(ctx context.Context, vs lsp.InitializeParams) (lsp.InitializeRes
 				ResolveProvider:   false,
 				TriggerCharacters: []string{"."},
 			},
-			//			HoverProvider:             true,
+			HoverProvider: true,
 			//			DocumentSymbolProvider:    true,
 			//ReferencesProvider: true,
 			//			DefinitionProvider:        true,
@@ -119,7 +122,76 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 	attr := config.AttributeAtPos(posHCL)
 	blocks := config.BlocksAtPos(posHCL)
 
+	//if expr != nil {
+	//	scope := lang.Scope{}
+	//	s, w := scope.EvalExpr(expr, cty.DynamicPseudoType)
+	//	helper.DumpLog(s)
+	//	helper.DumpLog(w)
+	//}
+
 	if expr == nil && attr == nil && blocks == nil {
+		attrs, _ := config.JustAttributes()
+		fileText, _ := ioutil.ReadFile(tempFile.Name())
+		pos := helper.FindOffset(string(fileText), vs.Position.Line+1, column+1)
+
+		posHCL2 := hcl.Pos{
+			Byte: pos,
+		}
+
+		for _, v := range attrs {
+			origType := reflect.TypeOf(v.Expr)
+			if origType == hclstructs.LiteralValueExpr() {
+				if v.Expr.(*hclsyntax.LiteralValueExpr).Range().ContainsPos(posHCL2) {
+					scope := lang.Scope{}
+
+					// Add Detaults
+					defaults := map[string]string{
+						"local":     " locals",
+						"path":      " path",
+						"terraform": " workspace",
+						"var":       " variable",
+						"module":    " module",
+						"data":      " data source",
+					}
+
+					for k, v := range defaults {
+						result = append(result, lsp.CompletionItem{
+							Label:  k,
+							Detail: v,
+						})
+					}
+					for k, v := range scope.Functions() {
+						var params []string
+
+						for _, x := range v.Params() {
+							params = append(params, x.Name)
+						}
+
+						result = append(result, lsp.CompletionItem{
+							Label:      fmt.Sprintf("%s(%s)", k, strings.Join(params, ",")),
+							InsertText: k,
+							Detail:     " function",
+						})
+
+					}
+
+					for _, v := range files.ManagedResources {
+						result = append(result, lsp.CompletionItem{
+							Label:  v.Type,
+							Detail: " resource",
+						})
+					}
+
+					return lsp.CompletionList{
+						IsIncomplete: false,
+						Items:        result,
+					}, nil
+
+				}
+			}
+		}
+
+		//hclsyntax.LiteralValueExpr
 		if r, found, _ := tfstructs.GetAttributeCompletion(result, configType, origConfig, fileDir); found {
 			return r, nil
 		}
@@ -127,8 +199,26 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 
 	// Block is Block, not resources
 	//test := config.BlocksAtPos(posHCL)
-	//helper.DumpLog(test)
 	if blocks != nil && attr == nil {
+		if blocks[0].Type == "dynamic" {
+			if len(blocks) == 1 {
+				result = append(result, lsp.CompletionItem{
+					Label:  "for_each",
+					Detail: " dynamic",
+				})
+				return lsp.CompletionList{
+					IsIncomplete: false,
+					Items:        result,
+				}, nil
+			}
+
+			dynamicBlock := blocks[0]
+			blocks := blocks[1:]
+			blocks[0].Type = dynamicBlock.Labels[0]
+			if r, found, _ := tfstructs.GetNestingCompletion(blocks, result, configType, origConfig, fileDir); found {
+				return r, nil
+			}
+		}
 		if r, found, _ := tfstructs.GetNestingCompletion(blocks, result, configType, origConfig, fileDir); found {
 			return r, nil
 		}
@@ -136,6 +226,7 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 
 	if expr != nil {
 		origType := reflect.TypeOf(expr)
+		//tests, errxs := lang.ReferencesInExpr(expr)
 		if origType != hclstructs.ObjectConsExpr() {
 			variables := hclstructs.GetExprVariables(origType, expr, posHCL)
 
@@ -144,6 +235,133 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 					vars := variables[0]
 
 					result = helper.ParseVariables(vars[1:], files.Variables, result)
+				} else if variables[0].RootName() == "data" {
+					// Need refactoring
+					if len(variables[0]) > 2 {
+						//re, _ := addrs.ParseAbsResourceInstanceStr(variables[0].RootName() + "." + variables[1][1].(hcl.TraverseAttr).Name)
+						//helper.DumpLog(re)
+						//helper.DumpLog(files.ResourceByAddr(re.Resource.Resource))
+						res := tfstructs.GetDataSourceSchema(variables[0][1].(hcl.TraverseAttr).Name, config, fileDir)
+
+						if res == nil {
+							result = append(result, lsp.CompletionItem{
+								Label:  "",
+								Detail: " No such data source",
+							})
+							return lsp.CompletionList{
+								IsIncomplete: false,
+								Items:        result,
+							}, nil
+						}
+
+						result = helper.ParseOtherAttr(variables[0][3:], res.Schema.Block.ImpliedType(), result)
+						return lsp.CompletionList{
+							IsIncomplete: false,
+							Items:        result,
+						}, nil
+					} else if len(variables[0]) == 2 {
+						for _, v := range files.DataResources {
+							if v.Type == variables[0][1].(hcl.TraverseAttr).Name {
+								result = append(result, lsp.CompletionItem{
+									Label:  v.Name,
+									Detail: " data source instance",
+								})
+							}
+						}
+						return lsp.CompletionList{
+							IsIncomplete: false,
+							Items:        result,
+						}, nil
+					} else {
+						for _, v := range files.DataResources {
+							result = append(result, lsp.CompletionItem{
+								Label:  v.Type,
+								Detail: " resource",
+							})
+						}
+
+						return lsp.CompletionList{
+							IsIncomplete: false,
+							Items:        result,
+						}, nil
+					}
+				} else {
+					if len(variables[0]) > 1 {
+						//re, _ := addrs.ParseAbsResourceInstanceStr(variables[0].RootName() + "." + variables[1][1].(hcl.TraverseAttr).Name)
+						//helper.DumpLog(re)
+						//helper.DumpLog(files.ResourceByAddr(re.Resource.Resource))
+						res := tfstructs.GetResourceSchema(variables[0].RootName(), config, fileDir)
+
+						if res == nil {
+							result = append(result, lsp.CompletionItem{
+								Label:  "",
+								Detail: " No such resource",
+							})
+							return lsp.CompletionList{
+								IsIncomplete: false,
+								Items:        result,
+							}, nil
+						}
+
+						result = helper.ParseOtherAttr(variables[0][2:], res.Schema.Block.ImpliedType(), result)
+						return lsp.CompletionList{
+							IsIncomplete: false,
+							Items:        result,
+						}, nil
+					} else {
+						for _, v := range files.ManagedResources {
+							if v.Type == variables[0].RootName() {
+								result = append(result, lsp.CompletionItem{
+									Label:  v.Name,
+									Detail: " resource instance",
+								})
+							}
+						}
+					}
+				}
+
+				return lsp.CompletionList{
+					IsIncomplete: false,
+					Items:        result,
+				}, nil
+			} else {
+				scope := lang.Scope{}
+
+				// Add Detaults
+				defaults := map[string]string{
+					"local":     " locals",
+					"path":      " path",
+					"terraform": " workspace",
+					"var":       " variable",
+					"module":    " module",
+					"data":      " data source",
+				}
+				for k, v := range defaults {
+					result = append(result, lsp.CompletionItem{
+						Label:  k,
+						Detail: v,
+					})
+				}
+				for k, v := range scope.Functions() {
+					var params []string
+
+					for _, x := range v.Params() {
+						params = append(params, x.Name)
+					}
+
+					result = append(result, lsp.CompletionItem{
+						Label:      fmt.Sprintf("%s(%s)", k, strings.Join(params, ",")),
+						InsertText: k,
+						Detail:     " function",
+					})
+
+				}
+
+				for _, v := range files.ManagedResources {
+					result = append(result, lsp.CompletionItem{
+						Label:  v.Type,
+						Detail: " resource",
+					})
 				}
 
 				return lsp.CompletionList{
@@ -249,6 +467,54 @@ func CancelRequest(ctx context.Context, vs lsp.CancelParams) error {
 //	}, nil
 //}
 
+func TextDocumentHover(ctx context.Context, vs lsp.TextDocumentPositionParams) (lsp.Hover, error) {
+
+	parser := configs.NewParser(nil)
+	file, _, column, _ := helper.CheckAndGetConfig(parser, tempFile, vs.Position.Line+1, vs.Position.Character)
+	fileText, _ := ioutil.ReadFile(tempFile.Name())
+	pos := helper.FindOffset(string(fileText), vs.Position.Line+1, column)
+	posHCL := hcl.Pos{
+		Byte: pos,
+	}
+	config, _, _ := tfstructs.GetConfig(file, posHCL)
+	if config == nil {
+		return lsp.Hover{
+			Contents: []lsp.MarkedString{},
+		}, nil
+	}
+	attr := config.AttributeAtPos(posHCL)
+	if attr != nil && attr.Expr != nil {
+		scope := lang.Scope{}
+
+		s, w := scope.EvalExpr(attr.Expr, cty.DynamicPseudoType)
+
+		val := ""
+
+		if w != nil {
+			return lsp.Hover{
+				Contents: []lsp.MarkedString{},
+			}, nil
+		}
+
+		if s.CanIterateElements() {
+		} else {
+			val = s.AsString()
+		}
+
+		return lsp.Hover{
+			Contents: []lsp.MarkedString{
+				lsp.MarkedString{
+					Language: "Terraform",
+					Value:    val,
+				},
+			},
+		}, nil
+	}
+	return lsp.Hover{
+		Contents: []lsp.MarkedString{},
+	}, nil
+}
+
 func TextDocumentPublishDiagnostics(server *jrpc2.Server, ctx context.Context, vs lsp.PublishDiagnosticsParams) error {
 
 	return server.Push(ctx, "textDocument/publishDiagnostics", vs)
@@ -261,6 +527,7 @@ func main() {
 		"textDocument/didChange":  handler.New(TextDocumentDidChange),
 		"textDocument/didOpen":    handler.New(TextDocumentDidOpen),
 		"textDocument/didClose":   handler.New(TextDocumentDidClose),
+		"textDocument/hover":      handler.New(TextDocumentHover),
 		//"textDocument/references": handler.New(TextDocumentReferences),
 		//"textDocument/codeLens": handler.New(TextDocumentCodeLens),
 		"exit":            handler.New(Exit),

@@ -45,7 +45,8 @@ func CheckAndGetConfig(parser *configs.Parser, originalFile *os.File, line int, 
 
 	re := regexp.MustCompile("\\s+([A-Za-z]*)$")
 
-	if (line-1) < len(textLines) && re.FindAll([]byte(textLines[line-1]), -1) != nil {
+	DumpLog(re.FindAll([]byte(textLines[line-1]), -1))
+	if (line-1) < len(textLines) && re.FindAll([]byte(textLines[line-1]), -1) != nil && len(re.FindAll([]byte(textLines[line-1]), -1)) != 1 {
 		textLines[line-1] = strings.Repeat(" ", utf8.RuneCountInString(textLines[line-1]))
 		tempFile.Truncate(0)
 		tempFile.Seek(0, 0)
@@ -142,4 +143,8 @@ func parseVariables(vars hcl.Traversal, configVarsType *cty.Type, completionItem
 	}
 
 	return nil
+}
+
+func ParseOtherAttr(vars hcl.Traversal, configVarsType cty.Type, completionItems []lsp.CompletionItem) []lsp.CompletionItem {
+	return parseVariables(vars, &configVarsType, completionItems)
 }

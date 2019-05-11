@@ -2,11 +2,11 @@ with import <nixpkgs> {};
 
 mkShell {
   buildInputs = [
-    go_1_11
+    go_1_12
     dep
   ];
 
   shellHook = ''
-    GOROOT=${pkgs.go}/share/go
+    GOROOT=${pkgs.go_1_12}/share/go
   '';
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/hcl2/hcl"
 	"github.com/hashicorp/hcl2/hcldec"
 	"github.com/hashicorp/terraform/configs"
+	"github.com/hashicorp/terraform/lang"
 	"github.com/hashicorp/terraform/providers"
 	"github.com/juliosueiras/terraform-lsp/helper"
 	"github.com/zclconf/go-cty/cty"
@@ -45,7 +46,21 @@ func GetResourceSchema(resourceType string, config hcl.Body, targetDir string) *
 	provider.Kill()
 
 	res2 := providerResource.Block.DecoderSpec()
-	res, diags := hcldec.Decode(config, res2, nil)
+	// Add Resources and Data Sources & Variables/Functions
+	scope := lang.Scope{}
+
+	res, _, diags := hcldec.PartialDecode(config, res2, &hcl.EvalContext{
+		// Build Full Tree
+		Variables: map[string]cty.Value{
+			"path": cty.ObjectVal(map[string]cty.Value{
+				"cwd": cty.StringVal(""),
+			}),
+			"data":   cty.DynamicVal,
+			"var":    cty.DynamicVal, // Need to check for undefined vars
+			"module": cty.DynamicVal,
+		},
+		Functions: scope.Functions(),
+	})
 
 	return &TerraformSchema{
 		Schema:        providerResource,
@@ -71,7 +86,15 @@ func GetDataSourceSchema(dataSourceType string, config hcl.Body, targetDir strin
 	provider.Kill()
 
 	res2 := providerDataSource.Block.DecoderSpec()
-	res, diags := hcldec.Decode(config, res2, nil)
+	scope := lang.Scope{}
+	res, _, diags := hcldec.PartialDecode(config, res2, &hcl.EvalContext{
+		Variables: map[string]cty.Value{
+			"data":   cty.DynamicVal,
+			"var":    cty.DynamicVal, // Need to check for undefined vars
+			"module": cty.DynamicVal,
+		},
+		Functions: scope.Functions(),
+	})
 
 	return &TerraformSchema{
 		Schema:        providerDataSource,
@@ -80,10 +103,66 @@ func GetDataSourceSchema(dataSourceType string, config hcl.Body, targetDir strin
 	}
 }
 
-func GetProvider(resourceType string, targetDir string) (*Client, error) {
-	if len(strings.Split(resourceType, "_")) == 0 {
+func GetProvider(providerType string, targetDir string) (*Client, error) {
+	if len(strings.Split(providerType, "_")) == 0 {
 		return nil, nil
 	}
-	provider, err := NewClient(strings.Split(resourceType, "_")[0], targetDir)
+	provider, err := NewClient(strings.Split(providerType, "_")[0], targetDir)
 	return provider, err
+}
+
+func GetProviderSchema(providerType string, config hcl.Body, targetDir string) *TerraformSchema {
+	provider, err := GetProvider(providerType, targetDir)
+	if err != nil {
+		helper.DumpLog(err)
+		return nil
+	}
+
+	providerSchema := provider.provider.GetSchema().Provider
+
+	provider.Kill()
+
+	res2 := providerSchema.Block.DecoderSpec()
+	scope := lang.Scope{}
+
+	res, _, diags := hcldec.PartialDecode(config, res2, &hcl.EvalContext{
+		Variables: map[string]cty.Value{
+			"data":   cty.DynamicVal,
+			"var":    cty.DynamicVal, // Need to check for undefined vars
+			"module": cty.DynamicVal,
+		},
+		Functions: scope.Functions(),
+	})
+
+	return &TerraformSchema{
+		Schema:        &providerSchema,
+		DecodedSchema: res,
+		Diags:         diags,
+	}
+}
+
+func GetAllConfigs(filePath string, tempFilePath string) *configs.Module {
+	parser := configs.NewParser(nil)
+	fileURL := strings.Replace(filePath, "file://", "", 1)
+
+	fileDir := filepath.Dir(fileURL)
+	res, _ := filepath.Glob(fileDir + "/*.tf")
+	var resultFiles []*configs.File
+
+	for _, v := range res {
+		if fileURL == v {
+			continue
+		}
+
+		cFile, _ := parser.LoadConfigFile(v)
+
+		resultFiles = append(resultFiles, cFile)
+	}
+
+	tempConfig, _ := parser.LoadConfigFile(tempFilePath)
+	resultFiles = append(resultFiles, tempConfig)
+
+	files, _ := configs.NewModule(resultFiles, nil)
+
+	return files
 }
