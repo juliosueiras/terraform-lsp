@@ -5,7 +5,6 @@ buildGoModule rec {
   version = "0.0.1";
   src = ./.;
 
-  #modSha256 = "0qswp5lqzpfjvlnb47fkafgwgk8mj569y3ak1ng8xs1ajzyvm1k8";
   modSha256 = 
   if stdenv.isLinux then
   "04pvx225jffa9kbg6q86mkgnb744axr8nif93zwrmkqz7c6apl2h" 
