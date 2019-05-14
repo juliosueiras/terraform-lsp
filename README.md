@@ -5,6 +5,9 @@ This is LSP(Language Server Protocol) for Terraform
 **NOTE:** This is first stage of the plugin, so is experimental
 
 - [Terraform LSP](#terraform-lsp)
+  * [Building](#building)
+    + [Native](#native)
+    + [Nixpkgs](#nixpkgs)
   * [Currently Supported](#currently-supported)
   * [Todo-List (Main)](#todo-list--main-)
   * [Todo-List (Terraform)](#todo-list--terraform-)
@@ -21,6 +24,18 @@ This is LSP(Language Server Protocol) for Terraform
   * [Bugs](#bugs)
 
 [![asciicast](https://asciinema.org/a/245075.svg)](https://asciinema.org/a/245075)
+
+## Building
+
+### Native
+
+- download go modules `GO111MODULE=on go download`
+- run make or `go build`
+
+### Nixpkgs
+
+- install nixpkgs
+- `nix-build`
 
 ## Currently Supported
 
