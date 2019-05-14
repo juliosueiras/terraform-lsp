@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"bitbucket.org/creachadair/jrpc2"
@@ -86,7 +87,8 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 	column := -1
 	var diags hcl.Diagnostics
 	var hclFile *hclsyntax.Body
-	file, diags, column, hclFile = helper.CheckAndGetConfig(parser, tempFile, vs.Position.Line+1, vs.Position.Character)
+	var haveDot bool
+	file, diags, column, hclFile, haveDot = helper.CheckAndGetConfig(parser, tempFile, vs.Position.Line+1, vs.Position.Character)
 
 	resultFiles = append(resultFiles, file)
 
@@ -101,7 +103,16 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 		Byte: pos,
 	}
 
-	if r, found, _ := tfstructs.GetTypeCompletion(result, fileDir, hclFile, posHCL); found {
+	var extraProvider string
+	if files.ProviderConfigs != nil {
+		for k, _ := range files.ProviderConfigs {
+			if k == "google-beta" {
+				extraProvider = "google-beta"
+			}
+		}
+	}
+
+	if r, found, _ := tfstructs.GetTypeCompletion(result, fileDir, hclFile, posHCL, extraProvider); found {
 		helper.DumpLog("Found Type Completion")
 		return r, nil
 	}
@@ -176,10 +187,20 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 					}
 
 					for _, v := range files.ManagedResources {
-						result = append(result, lsp.CompletionItem{
-							Label:  v.Type,
-							Detail: " resource",
-						})
+						existed := false
+						for _, e := range result {
+							if e.Label == v.Type {
+								existed = true
+								break
+							}
+						}
+
+						if !existed {
+							result = append(result, lsp.CompletionItem{
+								Label:  v.Type,
+								Detail: " resource",
+							})
+						}
 					}
 
 					return lsp.CompletionList{
@@ -225,105 +246,117 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 	}
 
 	if expr != nil {
+		helper.DumpLog("Found Expression")
+		helper.DumpLog(expr)
+		//.*for.*in\s+([^:]*)
+		//te, te2 := hclsyntax.ParseExpression([]byte("aws[0].test"), "test", hcl.Pos{
+		//	Line:   0,
+		//	Column: 0,
+		//})
+		//helper.DumpLog(te)
+		//helper.DumpLog(te2)
 		origType := reflect.TypeOf(expr)
-		//tests, errxs := lang.ReferencesInExpr(expr)
-		if origType != hclstructs.ObjectConsExpr() {
-			variables := hclstructs.GetExprVariables(origType, expr, posHCL)
+		if origType == hclstructs.LiteralValueExpr() {
+			if expr.(*hclsyntax.LiteralValueExpr).Val.Type().HasDynamicTypes() {
 
-			if len(variables) != 0 {
-				if variables[0].RootName() == "var" {
-					vars := variables[0]
+				textLines := strings.Split(string(fileText), "\n")
 
-					result = helper.ParseVariables(vars[1:], files.Variables, result)
-				} else if variables[0].RootName() == "data" {
-					// Need refactoring
-					if len(variables[0]) > 2 {
-						//re, _ := addrs.ParseAbsResourceInstanceStr(variables[0].RootName() + "." + variables[1][1].(hcl.TraverseAttr).Name)
-						//helper.DumpLog(re)
-						//helper.DumpLog(files.ResourceByAddr(re.Resource.Resource))
-						res := tfstructs.GetDataSourceSchema(variables[0][1].(hcl.TraverseAttr).Name, config, fileDir)
+				re := regexp.MustCompile(".*for.*in\\s+([^:]*)")
+				searchResult := re.FindSubmatch([]byte(textLines[vs.Position.Line]))
 
-						if res == nil {
-							result = append(result, lsp.CompletionItem{
-								Label:  "",
-								Detail: " No such data source",
-							})
-							return lsp.CompletionList{
-								IsIncomplete: false,
-								Items:        result,
-							}, nil
-						}
+				if searchResult != nil {
+					helper.DumpLog(searchResult[1])
+					dynamicExpr, _ := hclsyntax.ParseExpression([]byte(searchResult[1]), "test", hcl.Pos{
+						Line:   0,
+						Column: 0,
+					})
 
-						result = helper.ParseOtherAttr(variables[0][3:], res.Schema.Block.ImpliedType(), result)
-						return lsp.CompletionList{
-							IsIncomplete: false,
-							Items:        result,
-						}, nil
-					} else if len(variables[0]) == 2 {
-						for _, v := range files.DataResources {
-							if v.Type == variables[0][1].(hcl.TraverseAttr).Name {
-								result = append(result, lsp.CompletionItem{
-									Label:  v.Name,
-									Detail: " data source instance",
-								})
-							}
-						}
-						return lsp.CompletionList{
-							IsIncomplete: false,
-							Items:        result,
-						}, nil
-					} else {
-						for _, v := range files.DataResources {
-							result = append(result, lsp.CompletionItem{
-								Label:  v.Type,
-								Detail: " resource",
-							})
-						}
-
+					if len(dynamicExpr.Variables()) != 0 {
+						result = tfstructs.GetVarAttributeCompletion(tfstructs.GetVarAttributeRequest{
+							Variables: dynamicExpr.Variables()[0],
+							Result:    result,
+							Files:     files,
+							Config:    config,
+							FileDir:   fileDir,
+						})
 						return lsp.CompletionList{
 							IsIncomplete: false,
 							Items:        result,
 						}, nil
 					}
-				} else {
-					if len(variables[0]) > 1 {
-						//re, _ := addrs.ParseAbsResourceInstanceStr(variables[0].RootName() + "." + variables[1][1].(hcl.TraverseAttr).Name)
-						//helper.DumpLog(re)
-						//helper.DumpLog(files.ResourceByAddr(re.Resource.Resource))
-						res := tfstructs.GetResourceSchema(variables[0].RootName(), config, fileDir)
+				}
+			}
+		}
+		//reflect.New(origType)
+		if origType == hclstructs.ForExpr() {
+			expr := expr.(*hclsyntax.ForExpr)
+			helper.DumpLog(expr)
+			resultName := []string{}
+			helper.DumpLog(expr.ValExpr.Range().ContainsPos(posHCL))
+			if expr.ValExpr.Range().ContainsPos(posHCL) {
+				if reflect.TypeOf(expr.CollExpr) == hclstructs.ScopeTraversalExpr() {
+					resultName = append(resultName, expr.CollExpr.(*hclsyntax.ScopeTraversalExpr).AsTraversal().RootName())
 
-						if res == nil {
-							result = append(result, lsp.CompletionItem{
-								Label:  "",
-								Detail: " No such resource",
-							})
-							return lsp.CompletionList{
-								IsIncomplete: false,
-								Items:        result,
-							}, nil
-						}
-
-						result = helper.ParseOtherAttr(variables[0][2:], res.Schema.Block.ImpliedType(), result)
-						return lsp.CompletionList{
-							IsIncomplete: false,
-							Items:        result,
-						}, nil
-					} else {
-						for _, v := range files.ManagedResources {
-							if v.Type == variables[0].RootName() {
-								result = append(result, lsp.CompletionItem{
-									Label:  v.Name,
-									Detail: " resource instance",
-								})
-							}
+					for _, v := range expr.CollExpr.(*hclsyntax.ScopeTraversalExpr).AsTraversal()[1:] {
+						if reflect.TypeOf(v) == hclstructs.TraverseAttr() {
+							resultName = append(resultName, v.(hcl.TraverseAttr).Name)
+						} else if reflect.TypeOf(v) == hclstructs.TraverseIndex() {
+							resultName = append(resultName, "<index>")
 						}
 					}
+				}
+
+				scopeExpr := expr.ValExpr.(*hclsyntax.ScopeTraversalExpr)
+				helper.DumpLog(haveDot)
+				helper.DumpLog((len(scopeExpr.AsTraversal()) == 1 && haveDot) || len(scopeExpr.AsTraversal()) > 1)
+				if len(scopeExpr.AsTraversal()) == 1 && !haveDot {
+					helper.DumpLog(vs.Position.Character)
+					result = append(result, lsp.CompletionItem{
+						Label:  expr.ValVar,
+						Detail: fmt.Sprintf(" foreach var(%s)", strings.Join(resultName, ".")),
+					})
+				} else if (len(scopeExpr.AsTraversal()) == 1 && haveDot) || len(scopeExpr.AsTraversal()) > 1 {
+					forVars := expr.CollExpr.(*hclsyntax.ScopeTraversalExpr).AsTraversal()
+					for _, v := range scopeExpr.Traversal[1:] {
+						forVars = append(forVars, v)
+					}
+					result = tfstructs.GetVarAttributeCompletion(tfstructs.GetVarAttributeRequest{
+						Variables: forVars,
+						Result:    result,
+						Files:     files,
+						Config:    config,
+						FileDir:   fileDir,
+					})
+					return lsp.CompletionList{
+						IsIncomplete: false,
+						Items:        result,
+					}, nil
+
 				}
 
 				return lsp.CompletionList{
 					IsIncomplete: false,
 					Items:        result,
 				}, nil
+			}
+		}
+		//tests, errxs := lang.ReferencesInExpr(expr)
+		if origType != hclstructs.ObjectConsExpr() {
+			variables := hclstructs.GetExprVariables(origType, expr, posHCL)
+
+			if len(variables) != 0 {
+				result = tfstructs.GetVarAttributeCompletion(tfstructs.GetVarAttributeRequest{
+					Variables: variables[0],
+					Result:    result,
+					Files:     files,
+					Config:    config,
+					FileDir:   fileDir,
+				})
+				return lsp.CompletionList{
+					IsIncomplete: false,
+					Items:        result,
+				}, nil
+
 			} else {
 				scope := lang.Scope{}
 
@@ -358,10 +391,20 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 				}
 
 				for _, v := range files.ManagedResources {
-					result = append(result, lsp.CompletionItem{
-						Label:  v.Type,
-						Detail: " resource",
-					})
+					existed := false
+					for _, e := range result {
+						if e.Label == v.Type {
+							existed = true
+							break
+						}
+					}
+
+					if !existed {
+						result = append(result, lsp.CompletionItem{
+							Label:  v.Type,
+							Detail: " resource",
+						})
+					}
 				}
 
 				return lsp.CompletionList{
@@ -470,7 +513,7 @@ func CancelRequest(ctx context.Context, vs lsp.CancelParams) error {
 func TextDocumentHover(ctx context.Context, vs lsp.TextDocumentPositionParams) (lsp.Hover, error) {
 
 	parser := configs.NewParser(nil)
-	file, _, column, _ := helper.CheckAndGetConfig(parser, tempFile, vs.Position.Line+1, vs.Position.Character)
+	file, _, column, _, _ := helper.CheckAndGetConfig(parser, tempFile, vs.Position.Line+1, vs.Position.Character)
 	fileText, _ := ioutil.ReadFile(tempFile.Name())
 	pos := helper.FindOffset(string(fileText), vs.Position.Line+1, column)
 	posHCL := hcl.Pos{

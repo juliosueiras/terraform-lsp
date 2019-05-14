@@ -75,7 +75,7 @@ func GetNestingAttributeCompletion(attr *hcl.Attribute, result []lsp.CompletionI
 	//	}, true, nil
 }
 
-func GetTypeCompletion(result []lsp.CompletionItem, fileDir string, hclFile *hclsyntax.Body, posHCL hcl.Pos) (lsp.CompletionList, bool, error) {
+func GetTypeCompletion(result []lsp.CompletionItem, fileDir string, hclFile *hclsyntax.Body, posHCL hcl.Pos, extraProvider string) (lsp.CompletionList, bool, error) {
 	for _, v := range hclFile.Blocks {
 		blockType := v.Type
 		for i, r := range v.LabelRanges {
@@ -101,7 +101,14 @@ func GetTypeCompletion(result []lsp.CompletionItem, fileDir string, hclFile *hcl
 					}, true, nil
 				}
 
-				test, _ := GetProvider(v.Labels[i], fileDir)
+				var test *Client
+				var includeExtraProvider string
+				if strings.Contains(v.Labels[i], "google") && extraProvider == "google-beta" {
+					test, _ = GetProvider(extraProvider, fileDir)
+					includeExtraProvider = "(include Beta)"
+				} else {
+					test, _ = GetProvider(v.Labels[i], fileDir)
+				}
 				if test == nil {
 					result = append(result, lsp.CompletionItem{
 						Label:  v.Labels[i],
@@ -131,7 +138,7 @@ func GetTypeCompletion(result []lsp.CompletionItem, fileDir string, hclFile *hcl
 						if strings.HasPrefix(resource, v.Labels[i]) {
 							result = append(result, lsp.CompletionItem{
 								Label:  resource,
-								Detail: fmt.Sprintf(" %s", resultType),
+								Detail: fmt.Sprintf(" %s %s", resultType, includeExtraProvider),
 							})
 						}
 					}
@@ -244,8 +251,12 @@ func GetAttributeCompletion(result []lsp.CompletionItem, configType string, orig
 
 	case "resource":
 		origConfig := origConfig.(*configs.Resource)
+		var providerType string
+		if origConfig.ProviderConfigRef != nil {
+			providerType = origConfig.ProviderConfigRef.Name
+		}
 
-		res := GetResourceSchema(origConfig.Type, origConfig.Config, fileDir)
+		res := GetResourceSchema(origConfig.Type, origConfig.Config, fileDir, providerType)
 		if res == nil {
 			return lsp.CompletionList{
 				IsIncomplete: false,
@@ -254,7 +265,7 @@ func GetAttributeCompletion(result []lsp.CompletionItem, configType string, orig
 		}
 
 		for k, v := range res.Schema.Block.Attributes {
-			if v.Optional || v.Required {
+			if (v.Optional || v.Required) && k != "id" {
 				result = append(result, lsp.CompletionItem{
 					Label:         k,
 					Detail:        fmt.Sprintf(" (%s) %s", checkRequire(v), v.Type.FriendlyName()),
@@ -276,7 +287,12 @@ func GetAttributeCompletion(result []lsp.CompletionItem, configType string, orig
 	case "data":
 		origConfig := origConfig.(*configs.Resource)
 
-		res := GetDataSourceSchema(origConfig.Type, origConfig.Config, fileDir)
+		var providerType string
+		if origConfig.ProviderConfigRef != nil {
+			providerType = origConfig.ProviderConfigRef.Name
+		}
+
+		res := GetDataSourceSchema(origConfig.Type, origConfig.Config, fileDir, providerType)
 		if res == nil {
 			return lsp.CompletionList{
 				IsIncomplete: false,
@@ -285,7 +301,7 @@ func GetAttributeCompletion(result []lsp.CompletionItem, configType string, orig
 		}
 
 		for k, v := range res.Schema.Block.Attributes {
-			if v.Optional || v.Required {
+			if (v.Optional || v.Required) && k != "id" {
 				result = append(result, lsp.CompletionItem{
 					Label:         k,
 					Detail:        fmt.Sprintf(" (%s) %s", checkRequire(v), v.Type.FriendlyName()),
@@ -387,7 +403,11 @@ func GetNestingCompletion(blocks []*hcl.Block, result []lsp.CompletionItem, conf
 
 	case "resource":
 		origConfig := origConfig.(*configs.Resource)
-		res := GetResourceSchema(origConfig.Type, origConfig.Config, fileDir)
+		var providerType string
+		if origConfig.ProviderConfigRef != nil {
+			providerType = origConfig.ProviderConfigRef.Name
+		}
+		res := GetResourceSchema(origConfig.Type, origConfig.Config, fileDir, providerType)
 		if res == nil {
 			return lsp.CompletionList{
 				IsIncomplete: false,
@@ -455,7 +475,12 @@ func GetNestingCompletion(blocks []*hcl.Block, result []lsp.CompletionItem, conf
 		}
 	case "data":
 		origConfig := origConfig.(*configs.Resource)
-		res := GetDataSourceSchema(origConfig.Type, origConfig.Config, fileDir)
+		var providerType string
+		if origConfig.ProviderConfigRef != nil {
+			providerType = origConfig.ProviderConfigRef.Name
+		}
+
+		res := GetDataSourceSchema(origConfig.Type, origConfig.Config, fileDir, providerType)
 		if res == nil {
 			return lsp.CompletionList{
 				IsIncomplete: false,

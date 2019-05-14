@@ -3,40 +3,49 @@ package hclstructs
 import (
 	"github.com/hashicorp/hcl2/hcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
-	"github.com/juliosueiras/terraform-lsp/helper"
 	"reflect"
 )
 
+// Expression hcl
 func BinaryOpExpr() reflect.Type {
-	return helper.GetType(&hclsyntax.BinaryOpExpr{})
+	return GetType(&hclsyntax.BinaryOpExpr{})
 }
 
 func ObjectConsExpr() reflect.Type {
-	return helper.GetType(&hclsyntax.ObjectConsExpr{})
+	return GetType(&hclsyntax.ObjectConsExpr{})
 }
 
 func FunctionCallExpr() reflect.Type {
-	return helper.GetType(&hclsyntax.FunctionCallExpr{})
+	return GetType(&hclsyntax.FunctionCallExpr{})
 }
 
 func ScopeTraversalExpr() reflect.Type {
-	return helper.GetType(&hclsyntax.ScopeTraversalExpr{})
+	return GetType(&hclsyntax.ScopeTraversalExpr{})
 }
 
 func LiteralValueExpr() reflect.Type {
-	return helper.GetType(&hclsyntax.LiteralValueExpr{})
+	return GetType(&hclsyntax.LiteralValueExpr{})
 }
 
 func ForExpr() reflect.Type {
-	return helper.GetType(&hclsyntax.ForExpr{})
+	return GetType(&hclsyntax.ForExpr{})
 }
 
 func TupleConsExpr() reflect.Type {
-	return helper.GetType(&hclsyntax.TupleConsExpr{})
+	return GetType(&hclsyntax.TupleConsExpr{})
 }
 
 func TemplateWrapExpr() reflect.Type {
-	return helper.GetType(&hclsyntax.TemplateWrapExpr{})
+	return GetType(&hclsyntax.TemplateWrapExpr{})
+}
+
+// Traverse hcl
+func TraverseAttr() reflect.Type {
+	return GetType(hcl.TraverseAttr{})
+}
+
+func TraverseIndex() reflect.Type {
+	return GetType(hcl.TraverseIndex{})
 }
 
 func GetExprVariables(origType reflect.Type, expr hcl.Expression, posHCL hcl.Pos) []hcl.Traversal {
@@ -96,7 +105,6 @@ func GetExprVariables(origType reflect.Type, expr hcl.Expression, posHCL hcl.Pos
 		expr := expr.(*hclsyntax.ObjectConsExpr)
 		for _, v := range expr.Items {
 			if v.KeyExpr.Range().ContainsPos(posHCL) {
-				helper.DumpLog(v)
 			}
 
 			if v.ValueExpr.Range().ContainsPos(posHCL) {
@@ -107,8 +115,7 @@ func GetExprVariables(origType reflect.Type, expr hcl.Expression, posHCL hcl.Pos
 					firstVar,
 				}
 
-				origType := reflect.TypeOf(expr)
-				helper.DumpLog(origType)
+				origType := reflect.TypeOf(v.ValueExpr)
 				res := GetExprVariables(origType, v.ValueExpr, posHCL)
 				resultAttrs := vars
 				if len(res) != 0 && res != nil {
@@ -125,4 +132,8 @@ func GetExprVariables(origType reflect.Type, expr hcl.Expression, posHCL hcl.Pos
 	}
 
 	return nil
+}
+
+func GetType(t interface{}) reflect.Type {
+	return reflect.TypeOf(t)
 }

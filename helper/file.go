@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/hcl2/hcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/terraform/configs"
+	"github.com/juliosueiras/terraform-lsp/hclstructs"
 	"github.com/sourcegraph/go-lsp"
 	"github.com/zclconf/go-cty/cty"
 	"io/ioutil"
@@ -16,7 +17,7 @@ import (
 	"unicode/utf8"
 )
 
-func CheckAndGetConfig(parser *configs.Parser, originalFile *os.File, line int, character int) (*configs.File, hcl.Diagnostics, int, *hclsyntax.Body) {
+func CheckAndGetConfig(parser *configs.Parser, originalFile *os.File, line int, character int) (*configs.File, hcl.Diagnostics, int, *hclsyntax.Body, bool) {
 	fileText, _ := ioutil.ReadFile(originalFile.Name())
 	result := make([]byte, 1)
 	pos := FindOffset(string(fileText), line, character)
@@ -38,14 +39,13 @@ func CheckAndGetConfig(parser *configs.Parser, originalFile *os.File, line int, 
 		resultConfig, diags := parser.LoadConfigFileOverride(tempFile.Name())
 		testRes, _ := parser.LoadHCLFile(tempFile.Name())
 
-		return resultConfig, diags, character - 1, testRes.(*hclsyntax.Body)
+		return resultConfig, diags, character - 1, testRes.(*hclsyntax.Body), true
 	}
 
 	textLines := strings.Split(string(fileText), "\n")
 
 	re := regexp.MustCompile("\\s+([A-Za-z]*)$")
 
-	DumpLog(re.FindAll([]byte(textLines[line-1]), -1))
 	if (line-1) < len(textLines) && re.FindAll([]byte(textLines[line-1]), -1) != nil && len(re.FindAll([]byte(textLines[line-1]), -1)) != 1 {
 		textLines[line-1] = strings.Repeat(" ", utf8.RuneCountInString(textLines[line-1]))
 		tempFile.Truncate(0)
@@ -54,12 +54,12 @@ func CheckAndGetConfig(parser *configs.Parser, originalFile *os.File, line int, 
 		DumpLog(textLines)
 		resultConfig, diags := parser.LoadConfigFileOverride(tempFile.Name())
 		testRes, _ := parser.LoadHCLFile(tempFile.Name())
-		return resultConfig, diags, character, testRes.(*hclsyntax.Body)
+		return resultConfig, diags, character, testRes.(*hclsyntax.Body), false
 	}
 
 	testRes, _ := parser.LoadHCLFile(originalFile.Name())
 	resultConfig, diags := parser.LoadConfigFileOverride(originalFile.Name())
-	return resultConfig, diags, character, testRes.(*hclsyntax.Body)
+	return resultConfig, diags, character, testRes.(*hclsyntax.Body), false
 }
 
 func FindOffset(fileText string, line, column int) int {
@@ -84,10 +84,6 @@ func FindOffset(fileText string, line, column int) int {
 
 func DumpLog(res interface{}) {
 	log.Println(spew.Sdump(res))
-}
-
-func GetType(t interface{}) reflect.Type {
-	return reflect.TypeOf(t)
 }
 
 func ParseVariables(vars hcl.Traversal, configVars map[string]*configs.Variable, completionItems []lsp.CompletionItem) []lsp.CompletionItem {
@@ -133,13 +129,25 @@ func parseVariables(vars hcl.Traversal, configVarsType *cty.Type, completionItem
 		if et := configVarsType.ListElementType(); et != nil {
 			return parseVariables(vars[1:], et, completionItems)
 		}
+
+		if et := configVarsType.SetElementType(); et != nil {
+			return parseVariables(vars[1:], et, completionItems)
+		}
 	}
 
-	varAttr := vars[0].(hcl.TraverseAttr)
+	if reflect.TypeOf(vars[0]) == hclstructs.TraverseAttr() {
+		varAttr := vars[0].(hcl.TraverseAttr)
+		if configVarsType.HasAttribute(varAttr.Name) {
+			attr := configVarsType.AttributeType(varAttr.Name)
+			return parseVariables(vars[1:], &attr, completionItems)
+		}
+	} else if reflect.TypeOf(vars[0]) == hclstructs.TraverseIndex() {
+		DumpLog(configVarsType)
 
-	if configVarsType.HasAttribute(varAttr.Name) {
-		attr := configVarsType.AttributeType(varAttr.Name)
-		return parseVariables(vars[1:], &attr, completionItems)
+		return parseVariables(vars[1:], configVarsType, completionItems)
+	} else {
+		DumpLog(vars[0])
+		DumpLog(configVarsType)
 	}
 
 	return nil

@@ -29,8 +29,15 @@ func GetModuleVariables(moduleAddr string, config hcl.Body, targetDir string) (m
 	return t.Variables, true
 }
 
-func GetResourceSchema(resourceType string, config hcl.Body, targetDir string) *TerraformSchema {
-	provider, err := GetProvider(resourceType, targetDir)
+func GetResourceSchema(resourceType string, config hcl.Body, targetDir string, overrideProvider string) *TerraformSchema {
+	var provider *Client
+	var err error
+	if overrideProvider != "" {
+		provider, err = GetProvider(overrideProvider, targetDir)
+	} else {
+		provider, err = GetProvider(resourceType, targetDir)
+	}
+
 	if err != nil {
 		helper.DumpLog(err)
 		return nil
@@ -69,8 +76,14 @@ func GetResourceSchema(resourceType string, config hcl.Body, targetDir string) *
 	}
 }
 
-func GetDataSourceSchema(dataSourceType string, config hcl.Body, targetDir string) *TerraformSchema {
-	provider, err := GetProvider(dataSourceType, targetDir)
+func GetDataSourceSchema(dataSourceType string, config hcl.Body, targetDir string, overrideProvider string) *TerraformSchema {
+	var provider *Client
+	var err error
+	if overrideProvider != "" {
+		provider, err = GetProvider(overrideProvider, targetDir)
+	} else {
+		provider, err = GetProvider(dataSourceType, targetDir)
+	}
 	if err != nil {
 		helper.DumpLog(err)
 		return nil

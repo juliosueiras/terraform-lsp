@@ -127,7 +127,12 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 	for _, v := range cfg.ManagedResources {
 		resourceType := v.Type
 
-		tfSchema := GetResourceSchema(resourceType, v.Config, filepath.Dir(originalFile))
+		var providerType string
+		if v.ProviderConfigRef != nil {
+			providerType = v.ProviderConfigRef.Name
+		}
+
+		tfSchema := GetResourceSchema(resourceType, v.Config, filepath.Dir(originalFile), providerType)
 
 		if tfSchema != nil {
 			for _, diag := range tfSchema.Diags {
@@ -168,8 +173,12 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 
 	for _, v := range cfg.DataResources {
 		resourceType := v.Type
+		var providerType string
+		if v.ProviderConfigRef != nil {
+			providerType = v.ProviderConfigRef.Name
+		}
 
-		tfSchema := GetDataSourceSchema(resourceType, v.Config, filepath.Dir(originalFile))
+		tfSchema := GetDataSourceSchema(resourceType, v.Config, filepath.Dir(originalFile), providerType)
 
 		if tfSchema != nil {
 			for _, diag := range tfSchema.Diags {
