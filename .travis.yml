@@ -1,4 +1,8 @@
 language: nix
-os:
-  - linux
-  - osx
+
+matrix:
+  include:
+    - os: linux
+      env: TRAVIS_OS=linux
+    - os: osx
+      env: TRAVIS_OS=osx
