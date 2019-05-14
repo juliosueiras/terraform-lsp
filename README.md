@@ -42,9 +42,10 @@ This is LSP(Language Server Protocol) for Terraform
 
 ## Todo-List (Terraform)
 
-- [ ] Add Provider Listing(static list)
+- [X] Add Provider Listing(static list)
 - [X] Provider Configs
 - [X] Resources
+  - [X] Provider attribute scope completion(ex. google vs google-beta)
 - [X] Data Sources
 - [ ] Backends
 - [ ] Provisioner
@@ -61,8 +62,9 @@ This is LSP(Language Server Protocol) for Terraform
   - [ ] Object Interpolation
   - [ ] Functions
 
-- [ ] Dynamic Block
-  - [ ] For Each Block
+- [X] Dynamic Block 
+  - [X] For Each Block
+    - [ ] Check for complex scenario
 
 ## Todo-List (LSP)
 
