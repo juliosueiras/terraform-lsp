@@ -24,6 +24,7 @@ This is LSP(Language Server Protocol) for Terraform
   * [Bugs](#bugs)
 
 [![asciicast](https://asciinema.org/a/245075.svg)](https://asciinema.org/a/245075)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjuliosueiras%2Fterraform-lsp.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjuliosueiras%2Fterraform-lsp?ref=badge_shield)
 
 ## Building
 
@@ -132,3 +133,7 @@ This is LSP(Language Server Protocol) for Terraform
 - LSP structure using [Sourcegraph's go-lsp](https://github.com/sourcegraph/go-lsp)
 - JSONRPC2 using [JRPC2](https://bitbucket.org/creachadair/jrpc2)
 - [provider communication](./tfstructs/provider.go) is mostly adapted from [tfschema](https://github.com/minamijoyo/tfschema)
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjuliosueiras%2Fterraform-lsp.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjuliosueiras%2Fterraform-lsp?ref=badge_large)
