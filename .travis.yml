@@ -8,4 +8,4 @@ matrix:
       env: TRAVIS_OS=osx
 
 after_script:
-  - file ./result-bin/bin/terraform-lsp
+  - file ./result/bin/terraform-lsp
