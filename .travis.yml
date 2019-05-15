@@ -6,6 +6,8 @@ matrix:
       env: TRAVIS_OS=linux
     - os: osx
       env: TRAVIS_OS=osx
+    - os: windows
+      env: TRAVIS_OS=windows
 
 after_script:
   - file ./result/bin/terraform-lsp
