@@ -22,7 +22,7 @@ func CheckAndGetConfig(parser *configs.Parser, originalFile *os.File, line int, 
 	result := make([]byte, 1)
 	pos := FindOffset(string(fileText), line, character)
 
-	tempFile, _ := ioutil.TempFile("/tmp", "check_tf_lsp")
+	tempFile, _ := ioutil.TempFile("", "check_tf_lsp")
 	defer os.Remove(tempFile.Name())
 
 	originalFile.ReadAt(result, int64(pos))
@@ -62,6 +62,7 @@ func CheckAndGetConfig(parser *configs.Parser, originalFile *os.File, line int, 
 	return resultConfig, diags, character, testRes.(*hclsyntax.Body), false
 }
 
+// credits: https://stackoverflow.com/questions/28008566/how-to-compute-the-offset-from-column-and-line-number-go
 func FindOffset(fileText string, line, column int) int {
 	currentCol := 1
 	currentLine := 1
