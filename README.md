@@ -2,8 +2,7 @@
 
 [![Gitter](https://badges.gitter.im/terraform-lsp/community.svg)](https://gitter.im/terraform-lsp/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 ![terraform version](https://img.shields.io/badge/terraform-0.12.0-blue.svg)
-[![Nix Linux Build](https://badges.herokuapp.com/travis/juliosueiras/terraform-lsp?env=TRAVIS_OS=linux&label=Nix%20Linux%20Build)](https://travis-ci.com/juliosueiras/terraform-lsp)
-[![Nix OSX Build](https://badges.herokuapp.com/travis/juliosueiras/terraform-lsp?env=TRAVIS_OS=osx&label=Nix%20OSX%20Build)](https://travis-ci.com/juliosueiras/terraform-lsp)
+[![Nix Build](https://img.shields.io/travis/com/juliosueiras/terraform-lsp.svg?style=for-the-badge&logo=travis&label=Nix%20Build)](https://travis-ci.com/juliosueiras/terraform-lsp)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjuliosueiras%2Fterraform-lsp.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjuliosueiras%2Fterraform-lsp?ref=badge_shield)
 
 This is LSP(Language Server Protocol) for Terraform
