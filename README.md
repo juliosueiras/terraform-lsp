@@ -60,6 +60,7 @@ This is LSP(Language Server Protocol) for Terraform
 - Tests
 - Getting Started Guide
 - Add Gifs & Asciinema for Demo
+- Cross Compile for Windows Binary
 
 ## Todo-List (Terraform)
 
