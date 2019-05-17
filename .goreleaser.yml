@@ -17,6 +17,8 @@ scoop:
     email: goreleaser@carlosbecker.com
   url_template: https://github.com/juliosueiras/terraform-lsp/releases/download/{{
     .Tag }}/{{ .ArtifactName }}
+env:
+  - GO111MODULE=on
 before:
   hooks:
     - go mod download
