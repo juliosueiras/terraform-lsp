@@ -56,10 +56,20 @@ func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionI
 			return request.Result
 		} else {
 			for _, v := range request.Files.DataResources {
-				request.Result = append(request.Result, lsp.CompletionItem{
-					Label:  v.Type,
-					Detail: " data resource",
-				})
+				existed := false
+				for _, e := range request.Result {
+					if e.Label == v.Type {
+						existed = true
+						break
+					}
+				}
+
+				if !existed {
+					request.Result = append(request.Result, lsp.CompletionItem{
+						Label:  v.Type,
+						Detail: " data resource",
+					})
+				}
 			}
 
 			return request.Result
