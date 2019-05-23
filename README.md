@@ -34,7 +34,7 @@ This is LSP(Language Server Protocol) for Terraform
 
 ### Native
 
-- download go modules `GO111MODULE=on go download`
+- download go modules `GO111MODULE=on go mod download`
 - run make or `go build`
 
 ### Nixpkgs
