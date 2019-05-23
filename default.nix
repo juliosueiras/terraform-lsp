@@ -2,10 +2,10 @@ with import <nixpkgs> {};
 
 buildGoModule rec {
   name = "terraform-lsp";
-  version = "0.0.1";
+  version = "0.0.3";
   src = ./.;
 
-  modSha256 = "04pvx225jffa9kbg6q86mkgnb744axr8nif93zwrmkqz7c6apl2h"; 
+  modSha256 = "0kpw4jvw1cy52v1fsd756mj6p7rq0pw6kf0pqrfnx1gbxj56gmll"; 
   
 
   goPackagePath = "github.com/juliosueiras/terraform-lsp";

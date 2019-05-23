@@ -4,34 +4,66 @@ go 1.12
 
 require (
 	bitbucket.org/creachadair/jrpc2 v0.0.64
-	cloud.google.com/go v0.38.0 // indirect
-	github.com/aws/aws-sdk-go v1.19.27 // indirect
+	bitbucket.org/creachadair/stringset v0.0.5
+	cloud.google.com/go v0.38.0
+	github.com/agext/levenshtein v1.2.2
+	github.com/apparentlymart/go-cidr v1.0.0
+	github.com/apparentlymart/go-textseg v1.0.0
+	github.com/armon/go-radix v1.0.0
+	github.com/aws/aws-sdk-go v1.19.27
+	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
+	github.com/bgentry/speakeasy v0.1.0
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/davecgh/go-spew v1.1.1
-	github.com/golang/protobuf v1.3.1 // indirect
-	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
-	github.com/hashicorp/go-getter v1.2.0 // indirect
-	github.com/hashicorp/go-hclog v0.9.0 // indirect
-	github.com/hashicorp/go-version v1.2.0 // indirect
-	github.com/hashicorp/golang-lru v0.5.1 // indirect
-	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/hashicorp/hcl2 v0.0.0-20190503213020-640445e16309
-	github.com/hashicorp/hil v0.0.0-20190212132231-97b3a9cdfa93 // indirect
-	github.com/hashicorp/terraform v0.12.0-rc1
-	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
-	github.com/mattn/go-isatty v0.0.7 // indirect
+	github.com/fatih/color v1.7.0
+	github.com/golang/protobuf v1.3.1
+	github.com/google/go-cmp v0.3.0
+	github.com/googleapis/gax-go v2.0.0+incompatible
+	github.com/hashicorp/errwrap v1.0.0
+	github.com/hashicorp/go-cleanhttp v0.5.1
+	github.com/hashicorp/go-getter v1.3.0
+	github.com/hashicorp/go-hclog v0.9.0
+	github.com/hashicorp/go-multierror v1.0.0
+	github.com/hashicorp/go-plugin v1.0.1-0.20190430211030-5692942914bb
+	github.com/hashicorp/go-safetemp v1.0.0
+	github.com/hashicorp/go-uuid v1.0.1
+	github.com/hashicorp/go-version v1.2.0
+	github.com/hashicorp/golang-lru v0.5.1
+	github.com/hashicorp/hcl v1.0.0
+	github.com/hashicorp/hcl2 v0.0.0-20190515223218-4b22149b7cef
+	github.com/hashicorp/hil v0.0.0-20190212132231-97b3a9cdfa93
+	github.com/hashicorp/terraform v0.12.0
+	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d
+	github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af
+	github.com/kr/pty v1.1.3 // indirect
+	github.com/mattn/go-colorable v0.1.1
+	github.com/mattn/go-isatty v0.0.7
+	github.com/mitchellh/cli v1.0.0
+	github.com/mitchellh/copystructure v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/mitchellh/reflectwalk v1.0.1 // indirect
+	github.com/mitchellh/go-testing-interface v1.0.0
+	github.com/mitchellh/go-wordwrap v1.0.0
+	github.com/mitchellh/hashstructure v1.0.0
+	github.com/mitchellh/mapstructure v1.1.2
+	github.com/mitchellh/reflectwalk v1.0.1
+	github.com/oklog/run v1.0.0
+	github.com/posener/complete v1.2.1
 	github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1
-	github.com/spf13/afero v1.2.2 // indirect
-	github.com/ulikunitz/xz v0.5.6 // indirect
-	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
-	github.com/zclconf/go-cty v0.0.0-20190430221426-d36a6f0dbffd
-	golang.org/x/crypto v0.0.0-20190506204251-e1dfcc566284 // indirect
-	golang.org/x/net v0.0.0-20190503192946-f4e77d36d62c // indirect
-	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a // indirect
-	golang.org/x/sys v0.0.0-20190508100423-12bbe5a7a520 // indirect
-	golang.org/x/xerrors v0.0.0-20190506180316-385005612d73 // indirect
-	google.golang.org/appengine v1.5.0 // indirect
-	google.golang.org/genproto v0.0.0-20190502173448-54afdca5d873 // indirect
-	google.golang.org/grpc v1.20.1 // indirect
+	github.com/spf13/afero v1.2.2
+	github.com/ulikunitz/xz v0.5.6
+	github.com/vmihailenco/msgpack v4.0.4+incompatible
+	github.com/zclconf/go-cty v0.0.0-20190516203816-4fecf87372ec
+	go.opencensus.io v0.21.0
+	golang.org/x/crypto v0.0.0-20190506204251-e1dfcc566284
+	golang.org/x/exp v0.0.0-20190221220918-438050ddec5e // indirect
+	golang.org/x/net v0.0.0-20190503192946-f4e77d36d62c
+	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58
+	golang.org/x/sys v0.0.0-20190508100423-12bbe5a7a520
+	golang.org/x/text v0.3.2
+	golang.org/x/xerrors v0.0.0-20190506180316-385005612d73
+	google.golang.org/api v0.4.0
+	google.golang.org/appengine v1.5.0
+	google.golang.org/genproto v0.0.0-20190502173448-54afdca5d873
+	google.golang.org/grpc v1.20.1
 )
