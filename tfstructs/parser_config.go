@@ -229,7 +229,7 @@ func GetAttributeCompletion(result []lsp.CompletionItem, configType string, orig
 		schema, _ := res.GetRawProviderSchema()
 
 		for k, v := range schema.Block.Attributes {
-			if v.Optional || v.Required {
+			if (v.Optional || v.Required) && !v.Computed {
 				result = append(result, lsp.CompletionItem{
 					Label:         k,
 					Detail:        fmt.Sprintf(" (%s) %s", checkRequire(v), v.Type.FriendlyName()),
@@ -265,7 +265,7 @@ func GetAttributeCompletion(result []lsp.CompletionItem, configType string, orig
 		}
 
 		for k, v := range res.Schema.Block.Attributes {
-			if (v.Optional || v.Required) && k != "id" {
+			if (v.Optional || v.Required) && !v.Computed {
 				result = append(result, lsp.CompletionItem{
 					Label:         k,
 					Detail:        fmt.Sprintf(" (%s) %s", checkRequire(v), v.Type.FriendlyName()),
@@ -301,7 +301,7 @@ func GetAttributeCompletion(result []lsp.CompletionItem, configType string, orig
 		}
 
 		for k, v := range res.Schema.Block.Attributes {
-			if (v.Optional || v.Required) && k != "id" {
+			if (v.Optional || v.Required) && !v.Computed {
 				result = append(result, lsp.CompletionItem{
 					Label:         k,
 					Detail:        fmt.Sprintf(" (%s) %s", checkRequire(v), v.Type.FriendlyName()),
@@ -380,7 +380,7 @@ func GetNestingCompletion(blocks []*hcl.Block, result []lsp.CompletionItem, conf
 
 		if resultBlock != nil {
 			for k, v := range resultBlock.Attributes {
-				if v.Optional || v.Required {
+				if (v.Optional || v.Required) && !v.Computed {
 					result = append(result, lsp.CompletionItem{
 						Label:         k,
 						Detail:        fmt.Sprintf(" (%s) %s", checkRequire(v), v.Type.FriendlyName()),
@@ -453,7 +453,7 @@ func GetNestingCompletion(blocks []*hcl.Block, result []lsp.CompletionItem, conf
 		if resultBlock != nil {
 
 			for k, v := range resultBlock.Attributes {
-				if v.Optional || v.Required {
+				if (v.Optional || v.Required) && !v.Computed {
 					result = append(result, lsp.CompletionItem{
 						Label:         k,
 						Detail:        fmt.Sprintf(" (%s) %s", checkRequire(v), v.Type.FriendlyName()),
@@ -526,7 +526,7 @@ func GetNestingCompletion(blocks []*hcl.Block, result []lsp.CompletionItem, conf
 		if resultBlock != nil {
 
 			for k, v := range resultBlock.Attributes {
-				if v.Optional || v.Required {
+				if (v.Optional || v.Required) && !v.Computed {
 					result = append(result, lsp.CompletionItem{
 						Label:         k,
 						Detail:        fmt.Sprintf(" (%s) %s", checkRequire(v), v.Type.FriendlyName()),
