@@ -1,6 +1,6 @@
 [[constraint]]
-  name = "bitbucket.org/creachadair/jrpc2"
-  version = "0.0.64"
+  name = "github.com/creachadair/jrpc2"
+  version = "0.1.2"
 
 [[constraint]]
   name = "github.com/davecgh/go-spew"

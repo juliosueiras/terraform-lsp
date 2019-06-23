@@ -2,20 +2,6 @@
 
 
 [[projects]]
-  digest = "1:e743121392296522438a5a6cb6b61cc610ca5fc9ad7ebe377d5fb26b4ce91526"
-  name = "bitbucket.org/creachadair/jrpc2"
-  packages = [
-    ".",
-    "channel",
-    "code",
-    "handler",
-    "metrics",
-  ]
-  pruneopts = "UT"
-  revision = "e16bcaf596ee3048abf0ab49d54b7a5d44015e8a"
-  version = "v0.0.64"
-
-[[projects]]
   digest = "1:f42982142b398ccfad0c89f215eafd11ca1dc945cee48b2340aea28b53024326"
   name = "bitbucket.org/creachadair/stringset"
   packages = ["."]
@@ -137,6 +123,20 @@
   pruneopts = "UT"
   revision = "ba2c2ddd89069b46a7011d4106f6868f17ee1705"
   version = "v3.6.1"
+
+[[projects]]
+  digest = "1:328e4098af7bf6fa88472e6b78b43365e3b439906fc05d93d910d5a1fbdbba7f"
+  name = "github.com/creachadair/jrpc2"
+  packages = [
+    ".",
+    "channel",
+    "code",
+    "handler",
+    "metrics",
+  ]
+  pruneopts = "UT"
+  revision = "c5258d4de1d1ab4ca67724e6ad9296f10e57ed5d"
+  version = "v0.1.2"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -386,6 +386,18 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "c2b33e84"
+
+[[projects]]
+  digest = "1:12106f50f44906b1694656f616779fde11de3237092c35d4ca54df820aff5d0c"
+  name = "github.com/juliosueiras/terraform-lsp"
+  packages = [
+    "hclstructs",
+    "helper",
+    "tfstructs",
+  ]
+  pruneopts = "UT"
+  revision = "f07a6fa793460ff38bc17d5c80f30f3442e8f449"
+  version = "v0.0.3"
 
 [[projects]]
   digest = "1:c658e84ad3916da105a761660dcaeb01e63416c8ec7bc62256a9b411a05fcd67"
@@ -773,9 +785,9 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "bitbucket.org/creachadair/jrpc2",
-    "bitbucket.org/creachadair/jrpc2/channel",
-    "bitbucket.org/creachadair/jrpc2/handler",
+    "github.com/creachadair/jrpc2",
+    "github.com/creachadair/jrpc2/channel",
+    "github.com/creachadair/jrpc2/handler",
     "github.com/davecgh/go-spew/spew",
     "github.com/hashicorp/hcl2/hcl",
     "github.com/hashicorp/hcl2/hcl/hclsyntax",
@@ -787,6 +799,9 @@
     "github.com/hashicorp/terraform/plugin",
     "github.com/hashicorp/terraform/plugin/discovery",
     "github.com/hashicorp/terraform/providers",
+    "github.com/juliosueiras/terraform-lsp/hclstructs",
+    "github.com/juliosueiras/terraform-lsp/helper",
+    "github.com/juliosueiras/terraform-lsp/tfstructs",
     "github.com/mitchellh/go-homedir",
     "github.com/sourcegraph/go-lsp",
     "github.com/zclconf/go-cty/cty",
