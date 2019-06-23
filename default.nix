@@ -5,7 +5,7 @@ buildGoModule rec {
   version = "0.0.3";
   src = ./.;
 
-  modSha256 = "043916n6dpp3qkljqdnaj6bx6zmnmm7csbbjs8gwbx7kg0hw4fss"; 
+  modSha256 = "1mwhpabi7n0flw83q6850gg85c0v8b6hvyxjjglzzixjn58nmjxb"; 
 
   goPackagePath = "github.com/juliosueiras/terraform-lsp";
   subPackages = [ "." ];
