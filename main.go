@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -29,6 +30,8 @@ import (
 )
 
 var tempFile *os.File
+var location = flag.String("log-location", "", "Location of the lsp log")
+var enableLogFile = flag.Bool("enable-log", false, "Enable log")
 
 var Server *jrpc2.Server
 
@@ -564,6 +567,8 @@ func TextDocumentPublishDiagnostics(server *jrpc2.Server, ctx context.Context, v
 }
 
 func main() {
+	flag.Parse()
+
 	Server = jrpc2.NewServer(handler.Map{
 		"initialize":              handler.New(Initialize),
 		"textDocument/completion": handler.New(TextDocumentComplete),
@@ -579,12 +584,14 @@ func main() {
 		AllowPush: true,
 	})
 
-	f, err := os.OpenFile("tf-lsp.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
+	if *enableLogFile {
+		f, err := os.OpenFile(fmt.Sprintf("%stf-lsp.log", *location), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatalf("error opening file: %v", err)
+		}
+		defer f.Close()
+		log.SetOutput(f)
 	}
-	defer f.Close()
-	log.SetOutput(f)
 	// Start the server on a channel comprising stdin/stdout.
 	Server.Start(channel.Header("")(os.Stdin, os.Stdout))
 	log.Print("Server started")
