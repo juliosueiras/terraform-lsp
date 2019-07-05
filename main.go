@@ -31,7 +31,7 @@ import (
 
 var tempFile *os.File
 var location = flag.String("log-location", "", "Location of the lsp log")
-var enableLogFile = flag.Bool("enable-log", false, "Enable log")
+var enableLogFile = flag.Bool("enable-log-file", false, "Enable log file")
 
 var Server *jrpc2.Server
 
