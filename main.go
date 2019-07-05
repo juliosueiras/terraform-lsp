@@ -12,21 +12,21 @@ import (
 	"regexp"
 	"strings"
 
-	"bitbucket.org/creachadair/jrpc2"
-	"bitbucket.org/creachadair/jrpc2/channel"
-	"bitbucket.org/creachadair/jrpc2/handler"
+	"github.com/creachadair/jrpc2"
+	"github.com/creachadair/jrpc2/channel"
+	"github.com/creachadair/jrpc2/handler"
 	"github.com/hashicorp/hcl2/hcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
-	"github.com/hashicorp/terraform/lang"
-	//"github.com/hashicorp/hcl2/hcldec"
 	"github.com/hashicorp/terraform/configs"
-	//"github.com/hashicorp/terraform/providers"
-	//"github.com/minamijoyo/tfschema/tfschema"
+	"github.com/hashicorp/terraform/lang"
 	"github.com/juliosueiras/terraform-lsp/hclstructs"
 	"github.com/juliosueiras/terraform-lsp/helper"
 	"github.com/juliosueiras/terraform-lsp/tfstructs"
-	"github.com/sourcegraph/go-lsp"
+	lsp "github.com/sourcegraph/go-lsp"
 	"github.com/zclconf/go-cty/cty"
+	//"github.com/hashicorp/hcl2/hcldec"
+	//"github.com/hashicorp/terraform/providers"
+	//"github.com/minamijoyo/tfschema/tfschema"p
 )
 
 var tempFile *os.File
