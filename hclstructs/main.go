@@ -48,6 +48,33 @@ func TraverseIndex() reflect.Type {
 	return GetType(hcl.TraverseIndex{})
 }
 
+func GetExprStringType(origType reflect.Type) string {
+
+	switch origType {
+	// May need recursion
+	case BinaryOpExpr():
+		return "binary operation"
+	case FunctionCallExpr():
+		return "function call"
+	case ScopeTraversalExpr():
+		return "scoped expression"
+	case LiteralValueExpr():
+		return "literal value"
+	case ForExpr():
+		return "for loop"
+	case TupleConsExpr():
+		return "array"
+	case TemplateWrapExpr():
+		return "string interpolation"
+	case ObjectConsExpr():
+		return "object"
+	default:
+		return "undefined"
+	}
+
+	return "undefined"
+}
+
 func GetExprVariables(origType reflect.Type, expr hcl.Expression, posHCL hcl.Pos) []hcl.Traversal {
 
 	switch origType {

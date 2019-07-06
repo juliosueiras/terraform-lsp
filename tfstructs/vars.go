@@ -1,11 +1,15 @@
 package tfstructs
 
 import (
+	"fmt"
 	"github.com/hashicorp/hcl2/hcl"
+	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/terraform/addrs"
 	"github.com/hashicorp/terraform/configs"
+	"github.com/juliosueiras/terraform-lsp/hclstructs"
 	"github.com/juliosueiras/terraform-lsp/helper"
 	"github.com/sourcegraph/go-lsp"
+	"reflect"
 )
 
 type GetVarAttributeRequest struct {
@@ -17,12 +21,69 @@ type GetVarAttributeRequest struct {
 }
 
 func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionItem {
-	helper.DumpLog("hi")
-	helper.DumpLog(request.Variables)
 	if request.Variables.RootName() == "var" {
 		vars := request.Variables
 
 		request.Result = helper.ParseVariables(vars[1:], request.Files.Variables, request.Result)
+	} else if request.Variables.RootName() == "local" {
+		if len(request.Variables) > 1 {
+			var found *configs.Local
+			for _, v := range request.Files.Locals {
+				if v.Name == request.Variables[1].(hcl.TraverseAttr).Name {
+					found = v
+					break
+				}
+			}
+
+			origType := reflect.TypeOf(found.Expr)
+
+			if origType == hclstructs.ObjectConsExpr() {
+				items := found.Expr.(*hclsyntax.ObjectConsExpr).Items
+				for _, v := range request.Variables[2:] {
+					for _, l := range items {
+						if v.(hcl.TraverseAttr).Name == l.KeyExpr.(*hclsyntax.ObjectConsKeyExpr).Wrapped.(*hclsyntax.ScopeTraversalExpr).AsTraversal().RootName() {
+							origType2 := reflect.TypeOf(l.ValueExpr)
+
+							if origType2 == hclstructs.ObjectConsExpr() {
+								items = l.ValueExpr.(*hclsyntax.ObjectConsExpr).Items
+							}
+						}
+					}
+				}
+
+				for _, v := range items {
+					origType2 := reflect.TypeOf(v.ValueExpr)
+					helper.DumpLog(v.KeyExpr.(*hclsyntax.ObjectConsKeyExpr).Wrapped.(*hclsyntax.ScopeTraversalExpr).AsTraversal().RootName())
+					request.Result = append(request.Result, lsp.CompletionItem{
+						Label:  v.KeyExpr.(*hclsyntax.ObjectConsKeyExpr).Wrapped.(*hclsyntax.ScopeTraversalExpr).AsTraversal().RootName(),
+						Detail: fmt.Sprintf(" %s", hclstructs.GetExprStringType(origType2)),
+					})
+				}
+			}
+
+			return request.Result
+
+		} else if len(request.Variables) == 1 {
+			for _, v := range request.Files.Locals {
+				origType := reflect.TypeOf(v.Expr)
+				request.Result = append(request.Result, lsp.CompletionItem{
+					Label:  v.Name,
+					Detail: fmt.Sprintf(" local value(%s)", hclstructs.GetExprStringType(origType)),
+				})
+			}
+
+			return request.Result
+		} else {
+			for _, v := range request.Files.Locals {
+				origType := reflect.TypeOf(v.Expr)
+				request.Result = append(request.Result, lsp.CompletionItem{
+					Label:  v.Name,
+					Detail: fmt.Sprintf(" local value(%s)", hclstructs.GetExprStringType(origType)),
+				})
+			}
+
+			return request.Result
+		}
 	} else if request.Variables.RootName() == "data" {
 		// Need refactoring
 		if len(request.Variables) > 2 {

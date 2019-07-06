@@ -105,6 +105,7 @@ func GetDataSourceSchema(dataSourceType string, config hcl.Body, targetDir strin
 			"data":   cty.DynamicVal,
 			"var":    cty.DynamicVal, // Need to check for undefined vars
 			"module": cty.DynamicVal,
+			"local":  cty.DynamicVal,
 		},
 		Functions: scope.Functions(),
 	})
