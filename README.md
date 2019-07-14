@@ -68,8 +68,8 @@ This is LSP(Language Server Protocol) for Terraform
 - [X] Resources
   - [X] Provider attribute scope completion(ex. google vs google-beta)
 - [X] Data Sources
-- [ ] Backends
-- [ ] Provisioner
+- [ ] Backends (current focus)
+- [ ] Provisioner (current focus)
 - [ ] Interpolations
   - Complex nesting interpolations
 - [ ] Modules
