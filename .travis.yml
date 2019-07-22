@@ -11,6 +11,8 @@ jobs:
       services:
         - docker
       language: go
+      #if: tag IS present
+      install: echo "Deploying using GoReleaser..."
       deploy:
         - provider: script
           skip_cleanup: true
