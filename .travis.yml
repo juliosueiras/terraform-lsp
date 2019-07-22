@@ -12,13 +12,13 @@ jobs:
         - docker
       language: go
       #if: tag IS present
-      script: echo "Deploying using GoReleaser..."
+      script: skip
       deploy:
         - provider: script
           skip_cleanup: true
           script: curl -sL https://git.io/goreleaser | bash
           on:
-            tags: true
+            #tags: true
             condition: $TRAVIS_OS_NAME = linux
 
 after_script:
