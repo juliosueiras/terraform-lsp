@@ -7,16 +7,17 @@ jobs:
     - language: nix
       os: osx
       env: TRAVIS_OS=osx
-    - stage: GitHub Release
+    - stage: GoReleaser Deployment
+      services:
+        - docker
       language: go
-      script: echo "Deploying to GitHub releases ..."
       deploy:
-        provider: releases
-        api_key: $GITHUB_OAUTH_TOKEN
-        skip_cleanup: true
-        on:
-          tags: true
-
+        - provider: script
+          skip_cleanup: true
+          script: curl -sL https://git.io/goreleaser | bash
+          on:
+            tags: true
+            condition: $TRAVIS_OS_NAME = linux
 
 after_script:
   - file ./result/bin/terraform-lsp
