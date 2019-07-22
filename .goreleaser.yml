@@ -4,12 +4,6 @@ release:
     owner: juliosueiras
     name: terraform-lsp
   name_template: '{{.Tag}}'
-brew:
-  name: terraform-lsp
-  commit_author:
-    name: goreleaserbot
-    email: goreleaser@carlosbecker.com
-  install: bin.install "terraform-lsp"
 scoop:
   name: terraform-lsp
   commit_author:
