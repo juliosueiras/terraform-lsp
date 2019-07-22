@@ -1,17 +1,15 @@
 jobs:
   include:
-    - script: echo "Testing"
-    #  - language: nix
-    #    os: linux
-    #    env: TRAVIS_OS=linux
-    #  - language: nix
-    #    os: osx
-    #    env: TRAVIS_OS=osx
+    - language: nix
+      os: linux
+      env: TRAVIS_OS=linux
+    - language: nix
+      os: osx
+      env: TRAVIS_OS=osx
     - stage: GoReleaser Deployment
       services:
         - docker
       language: go
-      #if: tag IS present
       script: skip
       deploy:
         - provider: script
