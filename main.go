@@ -475,8 +475,13 @@ func TextDocumentDidOpen(ctx context.Context, vs lsp.DidOpenTextDocumentParams) 
 	return nil
 }
 
-func Exit(ctx context.Context, vs lsp.None) error {
+func Shutdown(ctx context.Context, vs lsp.None) error {
 	os.Remove(tempFile.Name())
+	return nil
+}
+
+func Exit(ctx context.Context, vs lsp.None) error {
+	os.Exit(0)
 	return nil
 }
 
@@ -593,6 +598,7 @@ func main() {
 		//"textDocument/references": handler.New(TextDocumentReferences),
 		//"textDocument/codeLens": handler.New(TextDocumentCodeLens),
 		"exit":            handler.New(Exit),
+		"shutdown":        handler.New(Shutdown),
 		"$/cancelRequest": handler.New(CancelRequest),
 	}, &jrpc2.ServerOptions{
 		AllowPush: true,
