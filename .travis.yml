@@ -1,11 +1,22 @@
 language: nix
-
-matrix:
+jobs:
   include:
-    - os: linux
-      env: TRAVIS_OS=linux
-    - os: osx
-      env: TRAVIS_OS=osx
+    - language: nix
+      matrix:
+        include:
+          - os: linux
+            env: TRAVIS_OS=linux
+          - os: osx
+            env: TRAVIS_OS=osx
+    - stage: GitHub Release
+      script: echo "Deploying to GitHub releases ..."
+      deploy:
+        provider: releases
+        api_key: $GITHUB_OAUTH_TOKEN
+        skip_cleanup: true
+        on:
+          tags: true
+
 
 after_script:
   - file ./result/bin/terraform-lsp
