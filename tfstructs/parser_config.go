@@ -38,6 +38,7 @@ func GetNestingAttributeCompletion(attr *hcl.Attribute, result []lsp.CompletionI
 				Items:        helper.ParseVariables(resultTraversal, moduleVars, result),
 			}, true, nil
 		}
+	case "provisioner":
 	case "resource":
 	case "data":
 		return lsp.CompletionList{
@@ -248,7 +249,40 @@ func GetAttributeCompletion(result []lsp.CompletionItem, configType string, orig
 			IsIncomplete: false,
 			Items:        result,
 		}, true, nil
+	case "provisioner":
+		origConfig := origConfig.(*hcl.Block)
 
+		res, _ := GetProvisioner(origConfig.Labels[0], fileDir)
+		if res == nil {
+			return lsp.CompletionList{
+				IsIncomplete: false,
+				Items:        result,
+			}, true, nil
+		}
+
+		defer res.Kill()
+		schema, _ := res.GetRawProvisionerSchema()
+
+		for k, v := range schema.Provisioner.Attributes {
+			if v.Optional || v.Required {
+				result = append(result, lsp.CompletionItem{
+					Label:         k,
+					Detail:        fmt.Sprintf(" (%s) %s", checkRequire(v), v.Type.FriendlyName()),
+					Documentation: v.Description,
+				})
+			}
+		}
+
+		for p, v := range schema.Provisioner.BlockTypes {
+			result = append(result, lsp.CompletionItem{
+				Label:  p,
+				Detail: " " + v.Nesting.String(),
+			})
+		}
+		return lsp.CompletionList{
+			IsIncomplete: false,
+			Items:        result,
+		}, true, nil
 	case "resource":
 		origConfig := origConfig.(*configs.Resource)
 		var providerType string
@@ -373,6 +407,51 @@ func GetNestingCompletion(blocks []*hcl.Block, result []lsp.CompletionItem, conf
 
 		var resultBlock *configschema.NestedBlock
 		searchBlockTypes := schema.Block.BlockTypes
+		for _, block := range blocks {
+			if searchBlockTypes[block.Type] != nil {
+				resultBlock = searchBlockTypes[block.Type]
+				searchBlockTypes = searchBlockTypes[block.Type].BlockTypes
+			}
+		}
+
+		if resultBlock != nil {
+			for k, v := range resultBlock.Attributes {
+				if v.Optional || v.Required {
+					result = append(result, lsp.CompletionItem{
+						Label:         k,
+						Detail:        fmt.Sprintf(" (%s) %s", checkRequire(v), v.Type.FriendlyName()),
+						Documentation: v.Description,
+					})
+				}
+			}
+
+			for p, v := range resultBlock.BlockTypes {
+				result = append(result, lsp.CompletionItem{
+					Label:  p,
+					Detail: " " + v.Nesting.String(),
+				})
+			}
+			return lsp.CompletionList{
+				IsIncomplete: false,
+				Items:        result,
+			}, true, nil
+		}
+	case "provisioner":
+		origConfig := origConfig.(*hcl.Block)
+
+		res, _ := GetProvisioner(origConfig.Labels[0], fileDir)
+		if res == nil {
+			return lsp.CompletionList{
+				IsIncomplete: false,
+				Items:        result,
+			}, true, nil
+		}
+
+		defer res.Kill()
+		schema, _ := res.GetRawProvisionerSchema()
+
+		var resultBlock *configschema.NestedBlock
+		searchBlockTypes := schema.Provisioner.BlockTypes
 		for _, block := range blocks {
 			if searchBlockTypes[block.Type] != nil {
 				resultBlock = searchBlockTypes[block.Type]

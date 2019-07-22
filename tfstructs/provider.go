@@ -3,23 +3,94 @@ package tfstructs
 
 import (
 	"fmt"
+	internalPlugin "github.com/hashicorp/go-plugin"
 	"github.com/hashicorp/terraform/plugin"
 	"github.com/hashicorp/terraform/plugin/discovery"
 	"github.com/hashicorp/terraform/providers"
+	"github.com/hashicorp/terraform/provisioners"
 	"github.com/mitchellh/go-homedir"
 	"go/build"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"runtime"
 	"strings"
 )
 
+var internalProvisionerList = map[string]bool{
+	"chef":            true,
+	"file":            true,
+	"habitat":         true,
+	"local-exec":      true,
+	"puppet":          true,
+	"remote-exec":     true,
+	"salt-masterless": true,
+}
+
 // Client represents a tfschema Client.
 type Client struct {
 	provider     *plugin.GRPCProvider
+	provisioner  *plugin.GRPCProvisioner
 	pluginClient interface{}
+}
+
+// NewProvisionerClient creates a new Client instance for Provisioner.
+func NewProvisionerClient(name string, targetDir string) (*Client, error) {
+	// find a provisioner plugin
+	if !internalProvisionerList[name] {
+
+		pluginMeta, err := findPlugin("provisioner", name, targetDir)
+		if err != nil {
+			return nil, err
+		}
+		pluginClient := plugin.Client(*pluginMeta)
+		rpcClient, err2 := pluginClient.Client()
+		if err2 != nil {
+			return nil, fmt.Errorf("Failed to initialize plugin: %s", err2)
+		}
+		// create a new resource provisioner.
+		raw, err := rpcClient.Dispense(plugin.ProvisionerPluginName)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to dispense plugin: %s", err)
+		}
+
+		provisioner := raw.(*plugin.GRPCProvisioner)
+
+		return &Client{
+			provisioner:  provisioner,
+			pluginClient: pluginClient,
+		}, nil
+
+	} else {
+		// initialize a plugin Client.
+		pluginClientConfig := plugin.ClientConfig(discovery.PluginMeta{
+			Name: "terraform",
+		})
+
+		res, _ := exec.LookPath("terraform")
+		pluginClientConfig.Cmd = exec.Command(res, "internal-plugin", "provisioner", name)
+
+		pluginClient := internalPlugin.NewClient(pluginClientConfig)
+		var err error
+		rpcClient, err := pluginClient.Client()
+		if err != nil {
+			return nil, fmt.Errorf("Failed to initialize plugin: %s", err)
+		}
+		// create a new resource provisioner.
+		raw, err := rpcClient.Dispense(plugin.ProvisionerPluginName)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to dispense plugin: %s", err)
+		}
+
+		provisioner := raw.(*plugin.GRPCProvisioner)
+
+		return &Client{
+			provisioner:  provisioner,
+			pluginClient: pluginClient,
+		}, nil
+	}
 }
 
 // NewClient creates a new Client instance.
@@ -118,6 +189,13 @@ func (c *Client) GetRawProviderSchema() (*providers.Schema, error) {
 
 	res := c.provider.GetSchema()
 	return &res.Provider, nil
+}
+
+// GetRawProvisionerSchema returns a raw type definiton of provisioner schema.
+func (c *Client) GetRawProvisionerSchema() (*provisioners.GetSchemaResponse, error) {
+
+	res := c.provisioner.GetSchema()
+	return &res, nil
 }
 
 // GetRawResourceTypeSchema returns a type definiton of resource type.
