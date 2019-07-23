@@ -481,6 +481,7 @@ func Shutdown(ctx context.Context, vs lsp.None) error {
 }
 
 func Exit(ctx context.Context, vs lsp.None) error {
+	os.Remove(tempFile.Name())
 	os.Exit(0)
 	return nil
 }
