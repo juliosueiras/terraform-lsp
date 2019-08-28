@@ -224,7 +224,21 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 	// Block is Block, not resources
 	//test := config.BlocksAtPos(posHCL)
 	if blocks != nil && attr == nil {
-		if blocks[0].Type == "dynamic" {
+		//helper.DumpLog(blocks)
+		if blocks[0].Type == "provisioner" {
+			helper.DumpLog(blocks)
+			if len(blocks) == 1 {
+
+				if r, found, _ := tfstructs.GetAttributeCompletion(result, "provisioner", blocks[0], fileDir); found {
+					return r, nil
+				}
+			} else {
+				if r, found, _ := tfstructs.GetNestingCompletion(blocks[1:], result, "provisioner", blocks[0], fileDir); found {
+					return r, nil
+				}
+			}
+
+		} else if blocks[0].Type == "dynamic" {
 			if len(blocks) == 1 {
 				result = append(result, lsp.CompletionItem{
 					Label:  "for_each",

@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/terraform/configs"
 	"github.com/hashicorp/terraform/lang"
 	"github.com/hashicorp/terraform/providers"
+	"github.com/hashicorp/terraform/provisioners"
 	"github.com/juliosueiras/terraform-lsp/helper"
 	"github.com/zclconf/go-cty/cty"
 	"path/filepath"
@@ -14,6 +15,12 @@ import (
 
 type TerraformSchema struct {
 	Schema        *providers.Schema
+	DecodedSchema cty.Value
+	Diags         hcl.Diagnostics
+}
+
+type TerraformProvisionerSchema struct {
+	Schema        *provisioners.GetSchemaResponse
 	DecodedSchema cty.Value
 	Diags         hcl.Diagnostics
 }
@@ -129,6 +136,41 @@ func GetProvider(providerType string, targetDir string) (*Client, error) {
 	}
 	provider, err := NewClient(strings.Split(providerType, "_")[0], targetDir)
 	return provider, err
+}
+
+func GetProvisioner(provisionerType string, targetDir string) (*Client, error) {
+	provisioner, err := NewProvisionerClient(provisionerType, targetDir)
+	return provisioner, err
+}
+
+func GetProvisionerSchema(provisionerType string, config hcl.Body, targetDir string) *TerraformProvisionerSchema {
+	provisioner, err := GetProvider(provisionerType, targetDir)
+	if err != nil {
+		helper.DumpLog(err)
+		return nil
+	}
+
+	provisionerSchema := provisioner.provisioner.GetSchema()
+
+	provisioner.Kill()
+
+	res2 := provisionerSchema.Provisioner.DecoderSpec()
+	scope := lang.Scope{}
+
+	res, _, diags := hcldec.PartialDecode(config, res2, &hcl.EvalContext{
+		Variables: map[string]cty.Value{
+			"data":   cty.DynamicVal,
+			"var":    cty.DynamicVal, // Need to check for undefined vars
+			"module": cty.DynamicVal,
+		},
+		Functions: scope.Functions(),
+	})
+
+	return &TerraformProvisionerSchema{
+		Schema:        &provisionerSchema,
+		DecodedSchema: res,
+		Diags:         diags,
+	}
 }
 
 func GetProviderSchema(providerType string, config hcl.Body, targetDir string) *TerraformSchema {
