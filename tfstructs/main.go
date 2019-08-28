@@ -60,11 +60,13 @@ func GetResourceSchema(resourceType string, config hcl.Body, targetDir string, o
 		// Build Full Tree
 		Variables: map[string]cty.Value{
 			"path": cty.ObjectVal(map[string]cty.Value{
-				"cwd": cty.StringVal(""),
+				"cwd":    cty.StringVal(""),
+				"module": cty.StringVal(""),
 			}),
 			"data":   cty.DynamicVal,
 			"var":    cty.DynamicVal, // Need to check for undefined vars
 			"module": cty.DynamicVal,
+			"local":  cty.DynamicVal,
 		},
 		Functions: scope.Functions(),
 	})
@@ -102,6 +104,10 @@ func GetDataSourceSchema(dataSourceType string, config hcl.Body, targetDir strin
 	scope := lang.Scope{}
 	res, _, diags := hcldec.PartialDecode(config, res2, &hcl.EvalContext{
 		Variables: map[string]cty.Value{
+			"path": cty.ObjectVal(map[string]cty.Value{
+				"cwd":    cty.StringVal(""),
+				"module": cty.StringVal(""),
+			}),
 			"data":   cty.DynamicVal,
 			"var":    cty.DynamicVal, // Need to check for undefined vars
 			"module": cty.DynamicVal,
@@ -141,9 +147,14 @@ func GetProviderSchema(providerType string, config hcl.Body, targetDir string) *
 
 	res, _, diags := hcldec.PartialDecode(config, res2, &hcl.EvalContext{
 		Variables: map[string]cty.Value{
+			"path": cty.ObjectVal(map[string]cty.Value{
+				"cwd":    cty.StringVal(""),
+				"module": cty.StringVal(""),
+			}),
 			"data":   cty.DynamicVal,
 			"var":    cty.DynamicVal, // Need to check for undefined vars
 			"module": cty.DynamicVal,
+			"local":  cty.DynamicVal,
 		},
 		Functions: scope.Functions(),
 	})
