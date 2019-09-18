@@ -48,12 +48,14 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 
 	resourceTypes := map[string]map[string]cty.Value{}
 
-	for _, v := range extra.ManagedResources {
-		if resourceTypes[v.Type] == nil {
-			resourceTypes[v.Type] = map[string]cty.Value{}
-		}
+	if extra != nil {
+		for _, v := range extra.ManagedResources {
+			if resourceTypes[v.Type] == nil {
+				resourceTypes[v.Type] = map[string]cty.Value{}
+			}
 
-		resourceTypes[v.Type][v.Name] = cty.DynamicVal
+			resourceTypes[v.Type][v.Name] = cty.DynamicVal
+		}
 	}
 
 	for _, v := range cfg.ManagedResources {
@@ -80,12 +82,14 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 
 	dataTypes := map[string]map[string]cty.Value{}
 
-	for _, v := range extra.DataResources {
-		if dataTypes[v.Type] == nil {
-			dataTypes[v.Type] = map[string]cty.Value{}
-		}
+	if extra != nil {
+		for _, v := range extra.DataResources {
+			if dataTypes[v.Type] == nil {
+				dataTypes[v.Type] = map[string]cty.Value{}
+			}
 
-		dataTypes[v.Type][v.Name] = cty.DynamicVal
+			dataTypes[v.Type][v.Name] = cty.DynamicVal
+		}
 	}
 
 	for _, v := range cfg.DataResources {
