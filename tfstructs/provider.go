@@ -3,12 +3,6 @@ package tfstructs
 
 import (
 	"fmt"
-	internalPlugin "github.com/hashicorp/go-plugin"
-	"github.com/hashicorp/terraform/plugin"
-	"github.com/hashicorp/terraform/plugin/discovery"
-	"github.com/hashicorp/terraform/providers"
-	"github.com/hashicorp/terraform/provisioners"
-	"github.com/mitchellh/go-homedir"
 	"go/build"
 	"log"
 	"os"
@@ -17,6 +11,13 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+
+	internalPlugin "github.com/hashicorp/go-plugin"
+	"github.com/hashicorp/terraform/plugin"
+	"github.com/hashicorp/terraform/plugin/discovery"
+	"github.com/hashicorp/terraform/providers"
+	"github.com/hashicorp/terraform/provisioners"
+	"github.com/mitchellh/go-homedir"
 )
 
 var internalProvisionerList = map[string]bool{
@@ -161,19 +162,35 @@ func pluginDirs(targetDir string) ([]string, error) {
 	vendorDir := filepath.Join("terraform.d", "plugins", arch)
 	dirs = append(dirs, vendorDir)
 
-	// auto installed directory
-	// This does not take into account overriding the data directory.
-	autoInstalledDir := filepath.Join(targetDir, ".terraform", "plugins", arch)
-	dirs = append(dirs, autoInstalledDir)
-
-	// global plugin directory
+	// home dir will be searched afterward
 	homeDir, err := homedir.Dir()
 	if err != nil {
 		return []string{}, fmt.Errorf("Failed to get home dir: %s", err)
 	}
+
+	// auto installed directory
+	// This does not take into account overriding the data directory.
+	autoInstalledDir := ""
+	for dir := targetDir; dir != "" && strings.HasPrefix(dir, homeDir); dir = filepath.Dir(dir) {
+		log.Printf("[DEBUG] search .terraform dir in %s", dir)
+		if _, err := os.Stat(filepath.Join(dir, ".terraform")); err == nil {
+			autoInstalledDir = filepath.Join(dir, ".terraform", "plugins", arch)
+			break
+		}
+	}
+	if autoInstalledDir != "" {
+		dirs = append(dirs, autoInstalledDir)
+	}
+
+	// global plugin directory
 	configDir := filepath.Join(homeDir, ".terraform.d", "plugins")
 	dirs = append(dirs, configDir)
 	dirs = append(dirs, filepath.Join(configDir, arch))
+
+	// global plugin cache directory
+	// This does not take into account overriding the plugin cache directory.
+	cacheDir := filepath.Join(homeDir, ".terraform.d", "plugin-cache", arch)
+	dirs = append(dirs, cacheDir)
 
 	// GOPATH
 	// This is not included in the Terraform, but for convenience.
