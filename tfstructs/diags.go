@@ -3,6 +3,8 @@ package tfstructs
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/configs"
+	"github.com/zclconf/go-cty/cty"
+	//"github.com/juliosueiras/terraform-lsp/helper"
 	"github.com/sourcegraph/go-lsp"
 	"os"
 	"path/filepath"
@@ -11,6 +13,7 @@ import (
 func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 	parser := configs.NewParser(nil)
 	result := make([]lsp.Diagnostic, 0)
+	originalFileName := originalFile
 	if _, err := os.Stat(fileName); os.IsNotExist(err) {
 		return result
 	}
@@ -40,6 +43,66 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 	}
 
 	cfg, tfDiags := parser.LoadConfigFile(fileName)
+	parser.ForceFileSource(originalFileName, []byte(""))
+	extra, _ := parser.LoadConfigDir(filepath.Dir(originalFileName))
+
+	resourceTypes := map[string]map[string]cty.Value{}
+
+	for _, v := range extra.ManagedResources {
+		if resourceTypes[v.Type] == nil {
+			resourceTypes[v.Type] = map[string]cty.Value{}
+		}
+
+		resourceTypes[v.Type][v.Name] = cty.DynamicVal
+	}
+
+	for _, v := range cfg.ManagedResources {
+		if resourceTypes[v.Type] == nil {
+			resourceTypes[v.Type] = map[string]cty.Value{}
+		}
+
+		resourceTypes[v.Type][v.Name] = cty.DynamicVal
+	}
+
+	variables := map[string]cty.Value{
+		"path": cty.ObjectVal(map[string]cty.Value{
+			"cwd":    cty.StringVal(""),
+			"module": cty.StringVal(""),
+		}),
+		"var":    cty.DynamicVal, // Need to check for undefined vars
+		"module": cty.DynamicVal,
+		"local":  cty.DynamicVal,
+	}
+
+	for k, v := range resourceTypes {
+		variables[k] = cty.ObjectVal(v)
+	}
+
+	dataTypes := map[string]map[string]cty.Value{}
+
+	for _, v := range extra.DataResources {
+		if dataTypes[v.Type] == nil {
+			dataTypes[v.Type] = map[string]cty.Value{}
+		}
+
+		dataTypes[v.Type][v.Name] = cty.DynamicVal
+	}
+
+	for _, v := range cfg.DataResources {
+		if dataTypes[v.Type] == nil {
+			dataTypes[v.Type] = map[string]cty.Value{}
+		}
+
+		dataTypes[v.Type][v.Name] = cty.DynamicVal
+	}
+
+	resultDataTypes := map[string]cty.Value{}
+
+	for k, v := range dataTypes {
+		resultDataTypes[k] = cty.ObjectVal(v)
+	}
+
+	variables["data"] = cty.ObjectVal(resultDataTypes)
 
 	for _, diag := range tfDiags {
 		result = append(result, lsp.Diagnostic{
@@ -85,7 +148,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 	for _, v := range cfg.ProviderConfigs {
 		providerType := v.Name
 
-		tfSchema := GetProviderSchema(providerType, v.Config, filepath.Dir(originalFile))
+		tfSchema := GetProviderSchemaForDiags(providerType, v.Config, filepath.Dir(originalFile), variables)
 
 		if tfSchema != nil {
 			for _, diag := range tfSchema.Diags {
@@ -132,7 +195,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 			providerType = v.ProviderConfigRef.Name
 		}
 
-		tfSchema := GetResourceSchema(resourceType, v.Config, filepath.Dir(originalFile), providerType)
+		tfSchema := GetResourceSchemaForDiags(resourceType, v.Config, filepath.Dir(originalFile), providerType, variables)
 
 		if tfSchema != nil {
 			for _, diag := range tfSchema.Diags {
@@ -178,7 +241,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 			providerType = v.ProviderConfigRef.Name
 		}
 
-		tfSchema := GetDataSourceSchema(resourceType, v.Config, filepath.Dir(originalFile), providerType)
+		tfSchema := GetDataSourceSchemaForDiags(resourceType, v.Config, filepath.Dir(originalFile), providerType, variables)
 
 		if tfSchema != nil {
 			for _, diag := range tfSchema.Diags {

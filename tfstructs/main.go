@@ -36,6 +36,46 @@ func GetModuleVariables(moduleAddr string, config hcl.Body, targetDir string) (m
 	return t.Variables, true
 }
 
+func GetResourceSchemaForDiags(resourceType string, config hcl.Body, targetDir string, overrideProvider string, variables map[string]cty.Value) *TerraformSchema {
+	var provider *Client
+	var err error
+	if overrideProvider != "" {
+		provider, err = GetProvider(overrideProvider, targetDir)
+	} else {
+		provider, err = GetProvider(resourceType, targetDir)
+	}
+
+	if err != nil {
+		helper.DumpLog(err)
+		return nil
+	}
+
+	providerResource, err := provider.GetRawResourceTypeSchema(resourceType)
+	if err != nil {
+		helper.DumpLog(err)
+		provider.Kill()
+		return nil
+	}
+
+	provider.Kill()
+
+	res2 := providerResource.Block.DecoderSpec()
+	// Add Resources and Data Sources & Variables/Functions
+	scope := lang.Scope{}
+
+	res, _, diags := hcldec.PartialDecode(config, res2, &hcl.EvalContext{
+		// Build Full Tree
+		Variables: variables,
+		Functions: scope.Functions(),
+	})
+
+	return &TerraformSchema{
+		Schema:        providerResource,
+		DecodedSchema: res,
+		Diags:         diags,
+	}
+}
+
 func GetResourceSchema(resourceType string, config hcl.Body, targetDir string, overrideProvider string) *TerraformSchema {
 	var provider *Client
 	var err error
@@ -80,6 +120,42 @@ func GetResourceSchema(resourceType string, config hcl.Body, targetDir string, o
 
 	return &TerraformSchema{
 		Schema:        providerResource,
+		DecodedSchema: res,
+		Diags:         diags,
+	}
+}
+
+func GetDataSourceSchemaForDiags(dataSourceType string, config hcl.Body, targetDir string, overrideProvider string, variables map[string]cty.Value) *TerraformSchema {
+	var provider *Client
+	var err error
+	if overrideProvider != "" {
+		provider, err = GetProvider(overrideProvider, targetDir)
+	} else {
+		provider, err = GetProvider(dataSourceType, targetDir)
+	}
+	if err != nil {
+		helper.DumpLog(err)
+		return nil
+	}
+
+	providerDataSource, err := provider.GetRawDataSourceTypeSchema(dataSourceType)
+	if err != nil {
+		helper.DumpLog(err)
+		provider.Kill()
+		return nil
+	}
+
+	provider.Kill()
+
+	res2 := providerDataSource.Block.DecoderSpec()
+	scope := lang.Scope{}
+	res, _, diags := hcldec.PartialDecode(config, res2, &hcl.EvalContext{
+		Variables: variables,
+		Functions: scope.Functions(),
+	})
+
+	return &TerraformSchema{
+		Schema:        providerDataSource,
 		DecodedSchema: res,
 		Diags:         diags,
 	}
@@ -168,6 +244,33 @@ func GetProvisionerSchema(provisionerType string, config hcl.Body, targetDir str
 
 	return &TerraformProvisionerSchema{
 		Schema:        &provisionerSchema,
+		DecodedSchema: res,
+		Diags:         diags,
+	}
+}
+
+// Need to combine with GetProviderSchema after testing
+func GetProviderSchemaForDiags(providerType string, config hcl.Body, targetDir string, variables map[string]cty.Value) *TerraformSchema {
+	provider, err := GetProvider(providerType, targetDir)
+	if err != nil {
+		helper.DumpLog(err)
+		return nil
+	}
+
+	providerSchema := provider.provider.GetSchema().Provider
+
+	provider.Kill()
+
+	res2 := providerSchema.Block.DecoderSpec()
+	scope := lang.Scope{}
+
+	res, _, diags := hcldec.PartialDecode(config, res2, &hcl.EvalContext{
+		Variables: variables,
+		Functions: scope.Functions(),
+	})
+
+	return &TerraformSchema{
+		Schema:        &providerSchema,
 		DecodedSchema: res,
 		Diags:         diags,
 	}
