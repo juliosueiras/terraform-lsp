@@ -58,7 +58,7 @@ func Initialize(ctx context.Context, vs lsp.InitializeParams) (lsp.InitializeRes
 				ResolveProvider:   false,
 				TriggerCharacters: []string{"."},
 			},
-			HoverProvider: true,
+			HoverProvider: false,
 			//			DocumentSymbolProvider:    true,
 			//ReferencesProvider: true,
 			//			DefinitionProvider:        true,
