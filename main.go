@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	//backendLocal "github.com/hashicorp/terraform/backend/local"
 	"io/ioutil"
 	"log"
 	"os"
@@ -17,8 +18,10 @@ import (
 	"github.com/creachadair/jrpc2/handler"
 	"github.com/hashicorp/hcl2/hcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
+	//"github.com/hashicorp/terraform/command"
 	"github.com/hashicorp/terraform/configs"
 	"github.com/hashicorp/terraform/lang"
+	//"github.com/hashicorp/terraform/terraform"
 	"github.com/juliosueiras/terraform-lsp/hclstructs"
 	"github.com/juliosueiras/terraform-lsp/helper"
 	"github.com/juliosueiras/terraform-lsp/tfstructs"
@@ -451,6 +454,7 @@ func TextDocumentDidChange(ctx context.Context, vs lsp.DidChangeTextDocumentPara
 	tempFile.Truncate(0)
 	tempFile.Seek(0, 0)
 	tempFile.Write([]byte(vs.ContentChanges[0].Text))
+
 	fileURL := strings.Replace(string(vs.TextDocument.URI), "file://", "", 1)
 	DiagsFiles[fileURL] = tfstructs.GetDiagnostics(tempFile.Name(), fileURL)
 
@@ -527,53 +531,53 @@ func CancelRequest(ctx context.Context, vs lsp.CancelParams) error {
 //	}, nil
 //}
 
-func TextDocumentHover(ctx context.Context, vs lsp.TextDocumentPositionParams) (lsp.Hover, error) {
-
-	parser := configs.NewParser(nil)
-	file, _, column, _, _ := helper.CheckAndGetConfig(parser, tempFile, vs.Position.Line+1, vs.Position.Character)
-	fileText, _ := ioutil.ReadFile(tempFile.Name())
-	pos := helper.FindOffset(string(fileText), vs.Position.Line+1, column)
-	posHCL := hcl.Pos{
-		Byte: pos,
-	}
-	config, _, _ := tfstructs.GetConfig(file, posHCL)
-	if config == nil {
-		return lsp.Hover{
-			Contents: []lsp.MarkedString{},
-		}, nil
-	}
-	attr := config.AttributeAtPos(posHCL)
-	if attr != nil && attr.Expr != nil {
-		scope := lang.Scope{}
-
-		s, w := scope.EvalExpr(attr.Expr, cty.DynamicPseudoType)
-
-		val := ""
-
-		if w != nil {
-			return lsp.Hover{
-				Contents: []lsp.MarkedString{},
-			}, nil
-		}
-
-		if s.CanIterateElements() {
-		} else {
-			val = s.AsString()
-		}
-
-		return lsp.Hover{
-			Contents: []lsp.MarkedString{
-				lsp.MarkedString{
-					Language: "Terraform",
-					Value:    val,
-				},
-			},
-		}, nil
-	}
-	return lsp.Hover{
-		Contents: []lsp.MarkedString{},
-	}, nil
-}
+//func TextDocumentHover(ctx context.Context, vs lsp.TextDocumentPositionParams) (lsp.Hover, error) {
+//
+//	parser := configs.NewParser(nil)
+//	file, _, column, _, _ := helper.CheckAndGetConfig(parser, tempFile, vs.Position.Line+1, vs.Position.Character)
+//	fileText, _ := ioutil.ReadFile(tempFile.Name())
+//	pos := helper.FindOffset(string(fileText), vs.Position.Line+1, column)
+//	posHCL := hcl.Pos{
+//		Byte: pos,
+//	}
+//	config, _, _ := tfstructs.GetConfig(file, posHCL)
+//	if config == nil {
+//		return lsp.Hover{
+//			Contents: []lsp.MarkedString{},
+//		}, nil
+//	}
+//	attr := config.AttributeAtPos(posHCL)
+//	if attr != nil && attr.Expr != nil {
+//		scope := lang.Scope{}
+//
+//		s, w := scope.EvalExpr(attr.Expr, cty.DynamicPseudoType)
+//
+//		val := ""
+//
+//		if w != nil {
+//			return lsp.Hover{
+//				Contents: []lsp.MarkedString{},
+//			}, nil
+//		}
+//
+//		if s.CanIterateElements() {
+//		} else {
+//			val = s.AsString()
+//		}
+//
+//		return lsp.Hover{
+//			Contents: []lsp.MarkedString{
+//				lsp.MarkedString{
+//					Language: "Terraform",
+//					Value:    val,
+//				},
+//			},
+//		}, nil
+//	}
+//	return lsp.Hover{
+//		Contents: []lsp.MarkedString{},
+//	}, nil
+//}
 
 func TextDocumentPublishDiagnostics(server *jrpc2.Server, ctx context.Context, vs lsp.PublishDiagnosticsParams) error {
 
@@ -589,7 +593,7 @@ func main() {
 		"textDocument/didChange":  handler.New(TextDocumentDidChange),
 		"textDocument/didOpen":    handler.New(TextDocumentDidOpen),
 		"textDocument/didClose":   handler.New(TextDocumentDidClose),
-		"textDocument/hover":      handler.New(TextDocumentHover),
+		//"textDocument/hover":      handler.New(TextDocumentHover),
 		//"textDocument/references": handler.New(TextDocumentReferences),
 		//"textDocument/codeLens": handler.New(TextDocumentCodeLens),
 		"exit":            handler.New(Exit),
