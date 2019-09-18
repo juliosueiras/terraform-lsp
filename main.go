@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	//backendLocal "github.com/hashicorp/terraform/backend/local"
 	"io/ioutil"
 	"log"
 	"os"
@@ -26,10 +25,10 @@ import (
 	"github.com/juliosueiras/terraform-lsp/helper"
 	"github.com/juliosueiras/terraform-lsp/tfstructs"
 	lsp "github.com/sourcegraph/go-lsp"
-	"github.com/zclconf/go-cty/cty"
+	//"github.com/zclconf/go-cty/cty"
 	//"github.com/hashicorp/hcl2/hcldec"
 	//"github.com/hashicorp/terraform/providers"
-	//"github.com/minamijoyo/tfschema/tfschema"p
+	//"github.com/minamijoyo/tfschema/tfschema"
 )
 
 var tempFile *os.File
