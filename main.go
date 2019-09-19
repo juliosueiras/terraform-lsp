@@ -35,6 +35,12 @@ var tempFile *os.File
 var location = flag.String("log-location", "", "Location of the lsp log")
 var enableLogFile = flag.Bool("enable-log-file", false, "Enable log file")
 
+var Version string
+var GitCommit string
+var Date string
+
+var version = flag.Bool("version", false, "Show version")
+
 var Server *jrpc2.Server
 
 func Initialize(ctx context.Context, vs lsp.InitializeParams) (lsp.InitializeResult, error) {
@@ -585,6 +591,11 @@ func TextDocumentPublishDiagnostics(server *jrpc2.Server, ctx context.Context, v
 
 func main() {
 	flag.Parse()
+
+	if *version {
+		fmt.Printf("v%s, commit: %s, build on: %s", strings.Trim(Version, "v"), GitCommit, Date)
+		return
+	}
 
 	Server = jrpc2.NewServer(handler.Map{
 		"initialize":              handler.New(Initialize),

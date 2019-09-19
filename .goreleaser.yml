@@ -35,7 +35,7 @@ builds:
   - windows_amd64
   main: .
   ldflags:
-  - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+  - -s -w -X main.Version={{.Version}} -X main.GitCommit={{.FullCommit}} -X main.Date={{.Date}}
   binary: terraform-lsp
   lang: go
 archive:
