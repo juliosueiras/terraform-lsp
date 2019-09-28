@@ -70,6 +70,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 		"path": cty.ObjectVal(map[string]cty.Value{
 			"cwd":    cty.StringVal(""),
 			"module": cty.StringVal(""),
+			"root":   cty.StringVal(""),
 		}),
 		"var":    cty.DynamicVal, // Need to check for undefined vars
 		"module": cty.DynamicVal,
