@@ -24,6 +24,7 @@ This is LSP(Language Server Protocol) for Terraform
       - [Issues](#issues-1)
     + [Intellij](#intellij)
     + [Vim](#vim)
+    + [Sublime Text 3](#sublime-text-3)
     + [Emacs](#emacs)
     + [Others](#others)
   * [Bugs](#bugs)
@@ -121,6 +122,34 @@ This is LSP(Language Server Protocol) for Terraform
 ### Vim
 
 - Should work with all lsp plugin on vim
+
+### Sublime Text 3
+
+Add this to the `clients` settings for [tomv564's LSP](https://github.com/tomv564/LSP) also make sure to have `terraform` syntax plugin for sublime text
+
+```json
+{
+  "clients":
+  {
+    "terraform":
+    {
+      "command":
+      [
+        "terraform-lsp",
+        "-enable-log-file",
+        "-log-location",
+        "/tmp/"
+      ],
+      "enabled": true,
+      "scopes": ["source.terraform"],
+      "complete_all_chars": true,
+      "syntaxes":  ["Packages/Terraform/Terraform.sublime-syntax"],
+      "languageId": "terraform"
+    }
+  }
+}
+```
+
 
 ### Emacs
 
