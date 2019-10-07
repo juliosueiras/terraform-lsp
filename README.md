@@ -101,7 +101,8 @@ This is LSP(Language Server Protocol) for Terraform
 
 ### VS Code
 
-- There is a seperate [vscode-languageclient-terraform](https://github.com/juliosueiras/vscode-languageclient-terraform)
+- **DEPRECATED:**There is a seperate [vscode-languageclient-terraform](https://github.com/juliosueiras/vscode-languageclient-terraform)
+- [vscode-terraform](https://github.com/mauve/vscode-terraform) 1.4.0 onward support usage of the lsp
 
 #### Issues
 
@@ -142,7 +143,6 @@ Add this to the `clients` settings for [tomv564's LSP](https://github.com/tomv56
       ],
       "enabled": true,
       "scopes": ["source.terraform"],
-      "complete_all_chars": true,
       "syntaxes":  ["Packages/Terraform/Terraform.sublime-syntax"],
       "languageId": "terraform"
     }
