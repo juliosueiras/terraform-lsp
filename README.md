@@ -1,7 +1,7 @@
 # Terraform LSP
 
 [![Gitter](https://badges.gitter.im/terraform-lsp/community.svg)](https://gitter.im/terraform-lsp/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-![terraform version](https://img.shields.io/badge/terraform-0.12.2-blue.svg)
+![terraform version](https://img.shields.io/badge/terraform-0.12.13-blue.svg)
 [![Nix Build](https://img.shields.io/travis/com/juliosueiras/terraform-lsp.svg?logo=travis&label=Nix%20Build)](https://travis-ci.com/juliosueiras/terraform-lsp)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjuliosueiras%2Fterraform-lsp.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjuliosueiras%2Fterraform-lsp?ref=badge_shield)
 
@@ -10,26 +10,20 @@ This is LSP(Language Server Protocol) for Terraform
 **NOTE:** This is first stage of the plugin, so is experimental
 
 - [Terraform LSP](#terraform-lsp)
+  * [Release](#release)
   * [Building](#building)
     + [Native](#native)
     + [Nixpkgs](#nixpkgs)
-  * [Currently Supported](#currently-supported)
-  * [Todo-List (Main)](#todo-list--main-)
-  * [Todo-List (Terraform)](#todo-list--terraform-)
-  * [Todo-List (LSP)](#todo-list--lsp-)
-  * [Editors Specific](#editors-specific)
-    + [VS Code](#vs-code)
-      - [Issues](#issues)
-    + [Atom](#atom)
-      - [Issues](#issues-1)
-    + [Intellij](#intellij)
-    + [Vim](#vim)
-    + [Sublime Text 3](#sublime-text-3)
-    + [Emacs](#emacs)
-    + [Others](#others)
+  * [Features](#features)
+  * [LSP Support Table](#lsp-support-table)
+  * [Supported Editors](#supported-editors)
   * [Bugs](#bugs)
 
 [![asciicast](https://asciinema.org/a/245075.svg)](https://asciinema.org/a/245075)
+
+## Release
+
+Release can be found [here](https://github.com/juliosueiras/terraform-lsp/releases)
 
 ## Building
 
@@ -43,7 +37,7 @@ This is LSP(Language Server Protocol) for Terraform
 - install nixpkgs
 - `nix-build`
 
-## Currently Supported
+## Features
 
 - Variables complex completion(infinite nesting type)
 - Provider Config completion
@@ -53,121 +47,37 @@ This is LSP(Language Server Protocol) for Terraform
 - Communication using provider binary(so it will support any provider as long as is built with terraform 0.12 sdk)
 - Module nesting(inifinte as well) variable completion
 
-## Todo-List (Main)
+## LSP Support Table
 
-- A lot of code clean up(right now is mostly getting the feature done)
-- CI/CD(Travis)
-- Tests
-- Getting Started Guide
-- Add Gifs & Asciinema for Demo
-- Cross Compile for Windows Binary
+| Feature | Description | Status |
+|---------|-------------|--------|
+| completion | Autocompletion | Supported for Resources/Data Sources/Variables/Locals, need support for nested interpolation |
+| publishDiagnostics | Error checking | Supported, need to check for all possible errors |
+| hover | Hover on function/variables to get result | Need to Implement  |
+| signatureHelp | get docs for resources/data sources name and params | Need to Implement  |
+| declaration | Go to Declaration | Need to Implement |
+| references | Find all references | Need to Implement |
+| implementation | Find all implementation | Need to Implement(not sure if is applicable) |
+| documentHighlight | resources/data sources/variables highlight | Need to Implement |
+| documentSymbol | resources/data sources/variables symbols | Need to Implement |
+| codeAction | Refactoring actions | Need to Implement |
+| codeLens | VSCode's code lens | Need to Implement |
+| formatting | Formatting | Need to Implement |
+| rename | Rename action | Need to Implement |
+| workspace | Workspace support | Need to Implement |
 
-## Todo-List (Terraform)
+## Supported Editors
 
-- [X] Add Provider Listing(static list)
-- [X] Provider Configs
-- [X] Resources
-  - [X] Provider attribute scope completion(ex. google vs google-beta)
-- [X] Data Sources
-- [ ] Backends (current focus)
-- [ ] Provisioner (current focus)
-- [ ] Interpolations
-  - Complex nesting interpolations
-- [ ] Modules
-- [ ] Locals
-- [ ] Outputs
+| Editor | Status | Docs |
+|---------|-------------|--------|
+| Visual Studio Code | Supported | [Link](docs/editors/vscode.md) |
+| Atom | Supported | [Link](docs/editors/atom.md) |
+| Vim | Supported | [Link](docs/editors/vim.md) |
+| Sublime Text 3 | Supported | [Link](docs/editors/sublime3.md) |
+| Intellij | Supported | [Link](docs/editors/intellij.md) |
+| Emacs | Supported | [Link](docs/editors/emacs.md) |
 
-- [ ] Variables
-  - [ ] Map Interpolation with Object inside
-  - [ ] Index Interpolation
-  - [ ] List Interpolation with Object inside
-  - [ ] Object Interpolation
-  - [ ] Functions
-
-- [X] Dynamic Block 
-  - [X] For Each Block
-    - [ ] Check for complex scenario
-
-## Todo-List (LSP)
-
-- [X] `initialize`
-- [X] `textDocument/completion`
-- [X] `textDocument/didChange`
-- [X] `textDocument/didOpen`
-- [X] `textDocument/publishDiagnostics`
-- Current Plan: Implement all possible LSP features
-
-## Editors Specific
-
-### VS Code
-
-- **DEPRECATED:** There is a seperate [vscode-languageclient-terraform](https://github.com/juliosueiras/vscode-languageclient-terraform)
-- [vscode-terraform](https://github.com/mauve/vscode-terraform) 1.4.0 onward support usage of the lsp
-
-#### Issues
-
-- Need syntax and highlight etc (possible collab with vscode-terraform?)
-
-### Atom
-
-- There is a seperate [atom-terraform](https://github.com/juliosueiras/atom-terraform)
-
-#### Issues
-
-- Need configuration for linter API
-
-### Intellij
-
-- Work with intellij-lsp plugin(also work with intellij-hcl together)
-
-### Vim
-
-- Should work with all lsp plugin on vim
-
-### Sublime Text 3
-
-Add this to the `clients` settings for [tomv564's LSP](https://github.com/tomv564/LSP) also make sure to have `terraform` syntax plugin for sublime text
-
-```json
-{
-  "clients":
-  {
-    "terraform":
-    {
-      "command":
-      [
-        "terraform-lsp",
-        "-enable-log-file",
-        "-log-location",
-        "/tmp/"
-      ],
-      "enabled": true,
-      "scopes": ["source.terraform"],
-      "syntaxes":  ["Packages/Terraform/Terraform.sublime-syntax"],
-      "languageId": "terraform"
-    }
-  }
-}
-```
-
-
-### Emacs
-
-- Work with [emacs-lsp/lsp-mode](https://github.com/emacs-lsp/lsp-mode) while still a little buggy
-   ```lisp
-   (add-to-list 'lsp-language-id-configuration '(terraform-mode . "terraform"))
-
-   (lsp-register-client
-    (make-lsp-client :new-connection (lsp-stdio-connection '("/path/to/terraform-lsp/terraform-lsp" "-enable-log-file"))
-                     :major-modes '(terraform-mode)
-                     :server-id 'terraform-ls))
-
-   (add-hook 'terraform-mode-hook #'lsp)
-   ```
-
-### Others
-
-- It should work with any lsp client in theory
+**NOTE:** Please create a issue for a editor that you want to test for
 
 ## Bugs
 - Order of completion items
