@@ -15,6 +15,7 @@ This is LSP(Language Server Protocol) for Terraform
     + [Native](#native)
     + [Nixpkgs](#nixpkgs)
   * [Features](#features)
+  * [Todo](#todo)
   * [LSP Support Table](#lsp-support-table)
   * [Supported Editors](#supported-editors)
   * [Bugs](#bugs)
@@ -46,6 +47,10 @@ Release can be found [here](https://github.com/juliosueiras/terraform-lsp/releas
 - Dynamic Error Checking(Terraform and HCL checks)
 - Communication using provider binary(so it will support any provider as long as is built with terraform 0.12 sdk)
 - Module nesting(inifinte as well) variable completion
+
+## Todo
+
+All Todos are listed [here](Todo.md)
 
 ## LSP Support Table
 
