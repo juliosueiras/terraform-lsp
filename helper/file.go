@@ -2,8 +2,8 @@ package helper
 
 import (
 	"github.com/davecgh/go-spew/spew"
-	"github.com/hashicorp/hcl2/hcl"
-	"github.com/hashicorp/hcl2/hcl/hclsyntax"
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/terraform/configs"
 	"github.com/juliosueiras/terraform-lsp/hclstructs"
 	"github.com/sourcegraph/go-lsp"
