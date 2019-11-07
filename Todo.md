@@ -1,8 +1,8 @@
 # Immediate Todo-List
 
-- [ ] Fix path/file issue #26
-- [ ] Support for tfvars #39
-- [ ] Support for formatting #37
+- [ ] Fix path/file issue [#26](https://github.com/juliosueiras/terraform-lsp/issues/26)
+- [ ] Support for tfvars [#39](https://github.com/juliosueiras/terraform-lsp/issues/39)
+- [ ] Support for formatting [#37](https://github.com/juliosueiras/terraform-lsp/issues/37)
 
 ## Todo-List (Main)
 
