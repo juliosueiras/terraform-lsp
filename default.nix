@@ -1,6 +1,9 @@
 with import <nixpkgs> {};
 
 buildGoModule rec {
+
+  inherit (go_1_12);
+  
   name = "terraform-lsp";
   version = "0.0.9";
   src = ./.;
