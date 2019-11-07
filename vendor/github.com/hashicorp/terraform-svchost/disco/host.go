@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-version"
-	"github.com/hashicorp/terraform/httpclient"
 )
 
 const versionServiceID = "versions.v1"
@@ -372,7 +371,6 @@ func (h *Host) VersionConstraints(id, product string) (*Constraints, error) {
 		return nil, fmt.Errorf("Failed to create version constraints request: %v", err)
 	}
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", httpclient.UserAgentString())
 
 	log.Printf("[DEBUG] Retrieve version constraints for service %s and product %s", id, product)
 

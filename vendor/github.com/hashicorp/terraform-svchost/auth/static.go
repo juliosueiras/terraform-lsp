@@ -3,7 +3,7 @@ package auth
 import (
 	"fmt"
 
-	"github.com/hashicorp/terraform/svchost"
+	"github.com/hashicorp/terraform-svchost"
 )
 
 // StaticCredentialsSource is a credentials source that retrieves credentials

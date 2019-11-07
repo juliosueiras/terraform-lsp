@@ -17,10 +17,8 @@ import (
 	"net/url"
 	"time"
 
-	cleanhttp "github.com/hashicorp/go-cleanhttp"
-	"github.com/hashicorp/terraform/httpclient"
-	"github.com/hashicorp/terraform/svchost"
-	"github.com/hashicorp/terraform/svchost/auth"
+	"github.com/hashicorp/terraform-svchost"
+	"github.com/hashicorp/terraform-svchost/auth"
 )
 
 const (
@@ -38,7 +36,7 @@ const (
 )
 
 // httpTransport is overridden during tests, to skip TLS verification.
-var httpTransport = cleanhttp.DefaultPooledTransport()
+var httpTransport = defaultHttpTransport()
 
 // Disco is the main type in this package, which allows discovery on given
 // hostnames and caches the results by hostname to avoid repeated requests
@@ -63,6 +61,13 @@ func NewWithCredentialsSource(credsSrc auth.CredentialsSource) *Disco {
 		hostCache: make(map[svchost.Hostname]*Host),
 		credsSrc:  credsSrc,
 		Transport: httpTransport,
+	}
+}
+
+func (d *Disco) SetUserAgent(uaString string) {
+	d.Transport = &userAgentRoundTripper{
+		innerRt:   d.Transport,
+		userAgent: uaString,
 	}
 }
 
@@ -185,7 +190,6 @@ func (d *Disco) discover(hostname svchost.Hostname) (*Host, error) {
 		URL:    discoURL,
 	}
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", httpclient.UserAgentString())
 
 	creds, err := d.CredentialsForHost(hostname)
 	if err != nil {

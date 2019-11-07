@@ -9,7 +9,7 @@ import (
 
 	ctyjson "github.com/zclconf/go-cty/cty/json"
 
-	"github.com/hashicorp/terraform/svchost"
+	"github.com/hashicorp/terraform-svchost"
 )
 
 type helperProgramCredentialsSource struct {
