@@ -1,6 +1,6 @@
 with import <nixpkgs> {};
 
-buildGo111Module rec {
+buildGo112Module rec {
 
   name = "terraform-lsp";
   version = "0.0.9";
