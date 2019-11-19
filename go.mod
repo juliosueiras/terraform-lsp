@@ -3,9 +3,8 @@ module github.com/juliosueiras/terraform-lsp
 go 1.12
 
 require (
-	github.com/creachadair/jrpc2 v0.1.2
+	github.com/creachadair/jrpc2 v0.4.5
 	github.com/davecgh/go-spew v1.1.1
-	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/hashicorp/go-hclog v0.9.0 // indirect
 	github.com/hashicorp/go-plugin v1.0.1-0.20190610192547-a1bc61569a26
 	github.com/hashicorp/hcl v1.0.0 // indirect
