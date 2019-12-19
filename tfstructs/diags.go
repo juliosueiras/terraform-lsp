@@ -74,6 +74,8 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 		"var":    cty.DynamicVal, // Need to check for undefined vars
 		"module": cty.DynamicVal,
 		"local":  cty.DynamicVal,
+		"each":   cty.DynamicVal,
+		"count":  cty.DynamicVal,
 	}
 
 	for k, v := range resourceTypes {
