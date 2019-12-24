@@ -16,6 +16,7 @@ func CreateServer() *jrpc2.Server {
 		//"textDocument/references": handler.New(TextDocumentReferences),
 		//"textDocument/codeLens": handler.New(TextDocumentCodeLens),
 		"exit":            handler.New(Exit),
+		"shutdown":        handler.New(Shutdown),
 		"$/cancelRequest": handler.New(CancelRequest),
 	}, &jrpc2.ServerOptions{
 		AllowPush: true,
