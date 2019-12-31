@@ -37,12 +37,7 @@ type codeError Code
 
 // Error satisfies the error interface using the registered string for the
 // code, if one is defined, or else a placeholder that describes the value.
-func (c codeError) Error() string {
-	if s, ok := stdError[Code(c)]; ok {
-		return fmt.Sprintf("[%d] %s", c, s)
-	}
-	return Code(c).String()
-}
+func (c codeError) Error() string { return Code(c).String() }
 
 // Code trivially satisfies the Coder interface.
 func (c codeError) Code() Code { return Code(c) }

@@ -2,6 +2,7 @@ package jrpc2
 
 import (
 	"context"
+	"encoding/json"
 
 	"golang.org/x/xerrors"
 
@@ -12,13 +13,8 @@ import (
 // context, or nil if ctx doees not have a collector attached.  The context
 // passed to a handler by *jrpc2.Server will include this value.
 func ServerMetrics(ctx context.Context) *metrics.M {
-	if v := ctx.Value(serverMetricsKey{}); v != nil {
-		return v.(*metrics.M)
-	}
-	return nil
+	return ctx.Value(serverKey{}).(*Server).metrics
 }
-
-type serverMetricsKey struct{}
 
 // InboundRequest returns the inbound request associated with the given
 // context, or nil if ctx does not have an inbound request. The context passed
@@ -42,15 +38,22 @@ type inboundRequestKey struct{}
 // passed to the handler by *jrpc2.Server will support notifications if the
 // server was constructed with the AllowPush option set true.
 func ServerPush(ctx context.Context, method string, params interface{}) error {
-	v := ctx.Value(serverPushKey{})
-	if v == nil {
+	s := ctx.Value(serverKey{}).(*Server)
+	if !s.allowP {
 		return ErrNotifyUnsupported
 	}
-	notify := v.(func(context.Context, string, interface{}) error)
-	return notify(ctx, method, params)
+	return s.Push(ctx, method, params)
 }
 
-type serverPushKey struct{}
+// CancelRequest requests the cancellation of the pending or in-flight request
+// with the specified ID.  If no request exists with that ID, this is a no-op
+// without error.
+func CancelRequest(ctx context.Context, id string) {
+	s := ctx.Value(serverKey{}).(*Server)
+	s.cancelRequests(ctx, []json.RawMessage{json.RawMessage(id)})
+}
+
+type serverKey struct{}
 
 // ErrNotifyUnsupported is returned by ServerPush if server notifications are
 // not enabled in the specified context.

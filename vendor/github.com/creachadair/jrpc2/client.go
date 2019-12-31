@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"sync"
@@ -74,7 +75,9 @@ func (c *Client) accept(ch channel.Receiver) error {
 	defer c.mu.Unlock()
 
 	if err != nil {
-		c.log("Decoding error: %v", err)
+		if !isUninteresting(err) {
+			c.log("Decoding error: %v", err)
+		}
 		c.stop(err)
 		return err
 	}
@@ -102,7 +105,10 @@ func (c *Client) deliver(rsp *jresponse) {
 		delete(c.pending, id)
 		p.ch <- &jresponse{
 			ID: rsp.ID,
-			E:  jerrorf(code.InvalidRequest, "incorrect version marker %q", rsp.V),
+			E: &Error{
+				code:    code.InvalidRequest,
+				message: fmt.Sprintf("incorrect version marker %q", rsp.V),
+			},
 		}
 		c.log("Invalid response for ID %q", id)
 	} else {
@@ -211,12 +217,20 @@ func (c *Client) waitComplete(pctx context.Context, id string, p *Response) {
 		return
 	}
 
-	c.log("Context ended for id %q, err=%v", id, pctx.Err())
+	err := pctx.Err()
+	c.log("Context ended for id %q, err=%v", id, err)
 	delete(c.pending, id)
-	code := code.FromError(pctx.Err())
+
+	var jerr *Error
+	if c.err != nil && !isUninteresting(c.err) {
+		jerr = &Error{code: code.InternalError, message: c.err.Error()}
+	} else if err != nil {
+		jerr = &Error{code: code.FromError(err), message: err.Error()}
+	}
+
 	p.ch <- &jresponse{
 		ID: json.RawMessage(id),
-		E:  jerrorf(code, "%v", pctx.Err()),
+		E:  jerr,
 	}
 
 	// Inform the server, best effort only. N.B. Use a background context here,
@@ -331,11 +345,15 @@ func (c *Client) Close() error {
 	c.stop(errClientStopped)
 	c.mu.Unlock()
 	<-c.done
-	// Dont' remark on a closed channel or EOF as a noteworthy failure.
-	if c.err == io.EOF || channel.IsErrClosing(c.err) || c.err == errClientStopped {
+	// Don't remark on a closed channel or EOF as a noteworthy failure.
+	if isUninteresting(c.err) {
 		return nil
 	}
 	return c.err
+}
+
+func isUninteresting(err error) bool {
+	return err == io.EOF || channel.IsErrClosing(err) || err == errClientStopped
 }
 
 // stop closes down the reader for c and records err as its final state.  The
@@ -346,6 +364,8 @@ func (c *Client) stop(err error) {
 		return // nothing is running
 	}
 	c.ch.Close()
+
+	// Unblock and fail any pending requests.
 	for _, p := range c.pending {
 		p.cancel()
 	}
@@ -370,7 +390,7 @@ func (c *Client) marshalParams(ctx context.Context, method string, params interf
 	if err != nil {
 		return nil, err
 	}
-	if len(pbits) == 0 || (pbits[0] != '[' && pbits[0] != '{' && string(pbits) != "null") {
+	if len(pbits) == 0 || (pbits[0] != '[' && pbits[0] != '{' && !isNull(pbits)) {
 		// JSON-RPC requires that if parameters are provided at all, they are
 		// an array or an object.
 		return nil, Errorf(code.InvalidRequest, "invalid parameters: array or object required")

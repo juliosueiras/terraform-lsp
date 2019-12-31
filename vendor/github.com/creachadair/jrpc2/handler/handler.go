@@ -28,7 +28,7 @@ func (m Func) Handle(ctx context.Context, req *jrpc2.Request) (interface{}, erro
 type Map map[string]jrpc2.Handler
 
 // Assign implements part of the jrpc2.Assigner interface.
-func (m Map) Assign(method string) jrpc2.Handler { return m[method] }
+func (m Map) Assign(_ context.Context, method string) jrpc2.Handler { return m[method] }
 
 // Names implements part of the jrpc2.Assigner interface.
 func (m Map) Names() []string { return stringset.FromKeys(m).Elements() }
@@ -48,12 +48,12 @@ type ServiceMap map[string]jrpc2.Assigner
 // Method portion to the corresponding Service assigner. If method does not
 // have the form Service.Method, or if Service is not set in m, the lookup
 // fails and returns nil.
-func (m ServiceMap) Assign(method string) jrpc2.Handler {
+func (m ServiceMap) Assign(ctx context.Context, method string) jrpc2.Handler {
 	parts := strings.SplitN(method, ".", 2)
 	if len(parts) == 1 {
 		return nil
 	} else if ass, ok := m[parts[0]]; ok {
-		return ass.Assign(parts[1])
+		return ass.Assign(ctx, parts[1])
 	}
 	return nil
 }

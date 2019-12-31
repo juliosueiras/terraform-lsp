@@ -37,8 +37,21 @@ func (e Error) UnmarshalData(v interface{}) error {
 	return json.Unmarshal([]byte(e.data), v)
 }
 
-func (e Error) tojerror() *jerror {
-	return &jerror{Code: int32(e.code), Msg: e.message, Data: e.data}
+// MarshalJSON implements the json.Marshaler interface for Error values.
+func (e Error) MarshalJSON() ([]byte, error) {
+	return json.Marshal(jerror{C: int32(e.code), M: e.message, D: e.data})
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface for Error values.
+func (e *Error) UnmarshalJSON(data []byte) error {
+	var v jerror
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	e.code = code.Code(v.C)
+	e.message = v.M
+	e.data = v.D
+	return nil
 }
 
 // ErrNoData indicates that there are no data to unmarshal.
