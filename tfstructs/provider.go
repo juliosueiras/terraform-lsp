@@ -171,7 +171,7 @@ func pluginDirs(targetDir string) ([]string, error) {
 	// auto installed directory
 	// This does not take into account overriding the data directory.
 	autoInstalledDir := ""
-	for dir := targetDir; dir != "" && strings.HasPrefix(dir, homeDir); dir = filepath.Dir(dir) {
+	for dir := targetDir; dir != ""; dir = filepath.Dir(dir) {
 		log.Printf("[DEBUG] search .terraform dir in %s", dir)
 		if _, err := os.Stat(filepath.Join(dir, ".terraform")); err == nil {
 			autoInstalledDir = filepath.Join(dir, ".terraform", "plugins", arch)
