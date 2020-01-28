@@ -162,10 +162,6 @@ func pluginDirs(targetDir string) ([]string, error) {
 	vendorDir := filepath.Join("terraform.d", "plugins", arch)
 	dirs = append(dirs, vendorDir)
 
-	// current .terraform directory
-	currentDir := filepath.Join(".terraform", "plugins", arch)
-	dirs = append(dirs, currentDir)
-
 	// home dir will be searched afterward
 	homeDir, err := homedir.Dir()
 	if err != nil {
