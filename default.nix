@@ -7,7 +7,7 @@ buildGo112Module rec {
   version = "0.0.9";
   src = ./.;
 
-  modSha256 = "038jm0cllk50s6lqmjm65mj6y3jdgdqpvs9lzmmh352s500vzs90"; 
+  modSha256 = null; 
 
   buildPhase = ''
     runHook preBuild
