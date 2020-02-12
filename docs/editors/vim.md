@@ -2,4 +2,4 @@
 
 Todo: add config snippets
 
-- Should work with all lsp plugin on vim
+- Should work with all LSP plugin on vim

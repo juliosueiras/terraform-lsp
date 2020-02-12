@@ -1,6 +1,7 @@
 # Atom
 
-- There is a seperate [atom-terraform](https://github.com/juliosueiras/atom-terraform)
+- There is a separate [atom-terraform](https://github.com/juliosueiras/atom-terraform)
+  plugin that works in conjunction with `terraform-lsp`
 
 ## Issues
 
