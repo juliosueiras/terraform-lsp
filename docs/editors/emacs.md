@@ -1,6 +1,6 @@
-### Emacs Supportt
+### Emacs Support
 
-There is two option
+There are two options
 
 1. Use the latest version of [emacs-lsp/lsp-mode](https://github.com/emacs-lsp/lsp-mode), it had added support for terraform-lsp
 
