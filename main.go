@@ -47,4 +47,6 @@ func main() {
 	if err := Server.Wait(); err != nil {
 		log.Printf("Server exited: %v", err)
 	}
+
+	log.Print("Server Finish")
 }

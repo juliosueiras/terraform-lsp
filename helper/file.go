@@ -6,24 +6,25 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/terraform/configs"
 	"github.com/juliosueiras/terraform-lsp/hclstructs"
+	"github.com/juliosueiras/terraform-lsp/memfs"
 	"github.com/sourcegraph/go-lsp"
+	"github.com/spf13/afero"
 	"github.com/zclconf/go-cty/cty"
-	"io/ioutil"
 	"log"
-	"os"
 	"reflect"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 )
 
-func CheckAndGetConfig(parser *configs.Parser, originalFile *os.File, line int, character int) (*configs.File, hcl.Diagnostics, int, *hclsyntax.Body, bool) {
-	fileText, _ := ioutil.ReadFile(originalFile.Name())
+func CheckAndGetConfig(parser *configs.Parser, originalFile afero.File, line int, character int) (*configs.File, hcl.Diagnostics, int, *hclsyntax.Body, bool) {
+  fileText, _ := afero.ReadFile(memfs.MemFs, originalFile.Name())
 	result := make([]byte, 1)
 	pos := FindOffset(string(fileText), line, character)
 
-	tempFile, _ := ioutil.TempFile("", "check_tf_lsp")
-	defer os.Remove(tempFile.Name())
+	tempFile, _ := afero.TempFile(memfs.MemFs, "", "check_tf_lsp")
+
+	defer memfs.MemFs.Remove(tempFile.Name())
 
 	originalFile.ReadAt(result, int64(pos))
 

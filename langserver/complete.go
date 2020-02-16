@@ -16,11 +16,13 @@ import (
 	"github.com/juliosueiras/terraform-lsp/hclstructs"
 	"github.com/juliosueiras/terraform-lsp/helper"
 	"github.com/juliosueiras/terraform-lsp/tfstructs"
-	"io/ioutil"
+	"github.com/juliosueiras/terraform-lsp/memfs"
+  "github.com/spf13/afero"
 )
 
 func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.CompletionList, error) {
-	parser := configs.NewParser(nil)
+  //log.Println(tfstructs.Clients)
+	parser := configs.NewParser(memfs.MemFs)
 
 	fileURL := strings.Replace(string(vs.TextDocument.URI), "file://", "", 1)
 
@@ -49,7 +51,7 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 
 	files, diags := configs.NewModule(resultFiles, nil)
 
-	fileText, _ := ioutil.ReadFile(tempFile.Name())
+	fileText, _ := afero.ReadFile(memfs.MemFs, tempFile.Name())
 	pos := helper.FindOffset(string(fileText), vs.Position.Line+1, column)
 
 	var result []lsp.CompletionItem
@@ -97,7 +99,7 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 
 	if expr == nil && attr == nil && blocks == nil {
 		attrs, _ := config.JustAttributes()
-		fileText, _ := ioutil.ReadFile(tempFile.Name())
+		fileText, _ := afero.ReadFile(memfs.MemFs, tempFile.Name())
 		pos := helper.FindOffset(string(fileText), vs.Position.Line+1, column+1)
 
 		posHCL2 := hcl.Pos{

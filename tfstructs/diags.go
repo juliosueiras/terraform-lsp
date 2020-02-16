@@ -5,20 +5,23 @@ import (
 	"github.com/hashicorp/terraform/configs"
 	"github.com/zclconf/go-cty/cty"
 	//"github.com/juliosueiras/terraform-lsp/helper"
+	"github.com/juliosueiras/terraform-lsp/memfs"
 	"github.com/sourcegraph/go-lsp"
-	"os"
+	"github.com/spf13/afero"
 	"path/filepath"
 )
 
 func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
-	parser := configs.NewParser(nil)
+  
+	parser := configs.NewParser(memfs.MemFs)
 	result := make([]lsp.Diagnostic, 0)
 	originalFileName := originalFile
-	if _, err := os.Stat(fileName); os.IsNotExist(err) {
+  
+	if exist, _ := afero.Exists(memfs.MemFs, fileName); !exist {
 		return result
 	}
 
-	if _, err := os.Stat(originalFile); os.IsNotExist(err) {
+	if exist, _ := afero.Exists(memfs.MemFs, originalFile); !exist {
 		originalFile = fileName
 	}
 

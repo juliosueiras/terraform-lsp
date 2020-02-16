@@ -3,13 +3,13 @@ package langserver
 import (
 	"context"
 	lsp "github.com/sourcegraph/go-lsp"
-	"io/ioutil"
+  "github.com/juliosueiras/terraform-lsp/memfs"
+  "github.com/spf13/afero"
 	"log"
 )
 
 func Initialize(ctx context.Context, vs lsp.InitializeParams) (lsp.InitializeResult, error) {
-
-	file, err := ioutil.TempFile("", "tf-lsp-")
+	file, err := afero.TempFile(memfs.MemFs, "", "tf-lsp-")
 	if err != nil {
 		log.Fatal(err)
 	}

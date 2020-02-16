@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform/providers"
 	"github.com/hashicorp/terraform/provisioners"
 	"github.com/juliosueiras/terraform-lsp/helper"
+	"github.com/juliosueiras/terraform-lsp/memfs"
 	"github.com/zclconf/go-cty/cty"
 	"path/filepath"
 	"strings"
@@ -26,7 +27,7 @@ type TerraformProvisionerSchema struct {
 }
 
 func GetModuleVariables(moduleAddr string, config hcl.Body, targetDir string) (map[string]*configs.Variable, bool) {
-	parser := configs.NewParser(nil)
+	parser := configs.NewParser(memfs.MemFs)
 
 	t, _ := parser.LoadConfigDir(filepath.Join(targetDir, moduleAddr))
 	if t == nil || len(t.Variables) == 0 {
@@ -312,7 +313,7 @@ func GetProviderSchema(providerType string, config hcl.Body, targetDir string) *
 }
 
 func GetAllConfigs(filePath string, tempFilePath string) *configs.Module {
-	parser := configs.NewParser(nil)
+	parser := configs.NewParser(memfs.MemFs)
 	fileURL := strings.Replace(filePath, "file://", "", 1)
 
 	fileDir := filepath.Dir(fileURL)
