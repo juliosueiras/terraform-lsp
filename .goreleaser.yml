@@ -13,9 +13,6 @@ scoop:
     .Tag }}/{{ .ArtifactName }}
 env:
   - GO111MODULE=on
-before:
-  hooks:
-    - go mod download
 builds:
 - goos:
   - linux
@@ -32,6 +29,8 @@ builds:
   - -s -w -X main.Version={{.Version}} -X main.GitCommit={{.FullCommit}} -X main.Date={{.Date}}
   binary: terraform-lsp
   lang: go
+  flags:
+  - -mod vendor
 archives:
   - id: terraform-lsp
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm
