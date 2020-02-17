@@ -194,7 +194,8 @@ func pluginDirs(targetDir string) ([]string, error) {
     targetDir = targetDir[i:] 
   }
 
-  for dir := targetDir; dir != ""; dir = filepath.Dir(dir) {
+  searchLevel := 4
+  for dir := targetDir; dir != "" && searchLevel != 0; dir = filepath.Dir(dir) {
 
     if dir[1:] == ":\\" {
       if _, err := os.Stat(filepath.Join(dir, ".terraform")); err == nil {
@@ -210,6 +211,7 @@ func pluginDirs(targetDir string) ([]string, error) {
 			break
 		}
 
+    searchLevel -= 1
 	}
 
 	if autoInstalledDir != "" {
