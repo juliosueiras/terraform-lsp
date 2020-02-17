@@ -160,23 +160,27 @@ func (t *CBDEdgeTransformer) Transform(g *Graph) error {
 			continue
 		}
 
-		// Find the destroy edge. There should only be one.
+		// Find the resource edges
 		for _, e := range g.EdgesTo(v) {
-			// Not a destroy edge, ignore it
-			de, ok := e.(*DestroyEdge)
-			if !ok {
-				continue
+			switch de := e.(type) {
+			case *DestroyEdge:
+				// we need to invert the destroy edge from the create node
+				log.Printf("[TRACE] CBDEdgeTransformer: inverting edge: %s => %s",
+					dag.VertexName(de.Source()), dag.VertexName(de.Target()))
+
+				// Found it! Invert.
+				g.RemoveEdge(de)
+				applyNode := de.Source()
+				destroyNode := de.Target()
+				g.Connect(&DestroyEdge{S: destroyNode, T: applyNode})
+			default:
+				// We cannot have any direct dependencies from creators when
+				// the node is CBD without inducing a cycle.
+				if _, ok := e.Source().(GraphNodeCreator); ok {
+					log.Printf("[TRACE] CBDEdgeTransformer: removing non DestroyEdge to CBD destroy node: %s => %s", dag.VertexName(e.Source()), dag.VertexName(e.Target()))
+					g.RemoveEdge(e)
+				}
 			}
-
-			log.Printf("[TRACE] CBDEdgeTransformer: inverting edge: %s => %s",
-				dag.VertexName(de.Source()), dag.VertexName(de.Target()))
-
-			// Found it! Invert.
-			g.RemoveEdge(de)
-			applyNode := de.Source()
-			destroyNode := de.Target()
-			g.Connect(&DestroyEdge{S: destroyNode, T: applyNode})
-			break
 		}
 
 		// If the address has an index, we strip that. Our depMap creation
@@ -255,7 +259,9 @@ func (t *CBDEdgeTransformer) depMap(g *Graph, destroyMap map[string][]dag.Vertex
 	// Build the list of destroy nodes that each resource address should depend
 	// on. For example, when we find B, we map the address of B to A_d in the
 	// "depMap" variable below.
-	depMap := make(map[string][]dag.Vertex)
+
+	// Use a nested map to remove duplicate edges.
+	depMap := make(map[string]map[dag.Vertex]struct{})
 	for _, v := range g.Vertices() {
 		// We're looking for resources.
 		rn, ok := v.(GraphNodeResource)
@@ -289,9 +295,25 @@ func (t *CBDEdgeTransformer) depMap(g *Graph, destroyMap map[string][]dag.Vertex
 			// Keep track of the destroy nodes that this address
 			// needs to depend on.
 			key := rn.ResourceAddr().String()
-			depMap[key] = append(depMap[key], dns...)
+
+			deps, ok := depMap[key]
+			if !ok {
+				deps = make(map[dag.Vertex]struct{})
+			}
+
+			for _, d := range dns {
+				deps[d] = struct{}{}
+			}
+			depMap[key] = deps
 		}
 	}
 
-	return depMap, nil
+	result := map[string][]dag.Vertex{}
+	for k, m := range depMap {
+		for v := range m {
+			result[k] = append(result[k], v)
+		}
+	}
+
+	return result, nil
 }

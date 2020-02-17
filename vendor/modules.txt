@@ -93,7 +93,7 @@ github.com/googleapis/gax-go/v2
 github.com/hashicorp/errwrap
 # github.com/hashicorp/go-cleanhttp v0.5.1
 github.com/hashicorp/go-cleanhttp
-# github.com/hashicorp/go-getter v1.4.0
+# github.com/hashicorp/go-getter v1.4.2-0.20200106182914-9813cbd4eb02
 github.com/hashicorp/go-getter
 github.com/hashicorp/go-getter/helper/url
 # github.com/hashicorp/go-hclog v0.9.0
@@ -121,14 +121,16 @@ github.com/hashicorp/hcl/hcl/scanner
 github.com/hashicorp/hcl/hcl/strconv
 github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
-# github.com/hashicorp/hcl/v2 v2.0.0
+# github.com/hashicorp/hcl/v2 v2.3.0
 github.com/hashicorp/hcl/v2
 github.com/hashicorp/hcl/v2/hclsyntax
 github.com/hashicorp/hcl/v2/hcldec
+github.com/hashicorp/hcl/v2/ext/customdecode
 github.com/hashicorp/hcl/v2/ext/typeexpr
 github.com/hashicorp/hcl/v2/gohcl
 github.com/hashicorp/hcl/v2/hclparse
 github.com/hashicorp/hcl/v2/ext/dynblock
+github.com/hashicorp/hcl/v2/ext/tryfunc
 github.com/hashicorp/hcl/v2/hclwrite
 github.com/hashicorp/hcl/v2/json
 # github.com/hashicorp/hil v0.0.0-20190212132231-97b3a9cdfa93
@@ -136,7 +138,7 @@ github.com/hashicorp/hil/ast
 github.com/hashicorp/hil
 github.com/hashicorp/hil/parser
 github.com/hashicorp/hil/scanner
-# github.com/hashicorp/terraform v0.12.13
+# github.com/hashicorp/terraform v0.12.20
 github.com/hashicorp/terraform/configs
 github.com/hashicorp/terraform/lang
 github.com/hashicorp/terraform/addrs
@@ -145,9 +147,10 @@ github.com/hashicorp/terraform/plugin
 github.com/hashicorp/terraform/plugin/discovery
 github.com/hashicorp/terraform/providers
 github.com/hashicorp/terraform/provisioners
+github.com/hashicorp/terraform/experiments
+github.com/hashicorp/terraform/tfdiags
 github.com/hashicorp/terraform/lang/blocktoattr
 github.com/hashicorp/terraform/lang/funcs
-github.com/hashicorp/terraform/tfdiags
 github.com/hashicorp/terraform/helper/didyoumean
 github.com/hashicorp/terraform/helper/plugin
 github.com/hashicorp/terraform/internal/tfplugin5
@@ -164,14 +167,15 @@ github.com/hashicorp/terraform/helper/schema
 github.com/hashicorp/terraform/plans/objchange
 github.com/hashicorp/terraform/config
 github.com/hashicorp/terraform/dag
+github.com/hashicorp/terraform/helper/logging
 github.com/hashicorp/terraform/moduledeps
 github.com/hashicorp/terraform/plans
 github.com/hashicorp/terraform/states/statefile
 github.com/hashicorp/terraform/helper/hashcode
 github.com/hashicorp/terraform/helper/hilmapstructure
 # github.com/hashicorp/terraform-svchost v0.0.0-20191011084731-65d371908596
-github.com/hashicorp/terraform-svchost/disco
 github.com/hashicorp/terraform-svchost
+github.com/hashicorp/terraform-svchost/disco
 github.com/hashicorp/terraform-svchost/auth
 # github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d
 github.com/hashicorp/yamux
@@ -217,7 +221,7 @@ github.com/ulikunitz/xz/internal/hash
 # github.com/vmihailenco/msgpack v4.0.4+incompatible
 github.com/vmihailenco/msgpack
 github.com/vmihailenco/msgpack/codes
-# github.com/zclconf/go-cty v1.1.0
+# github.com/zclconf/go-cty v1.2.1
 github.com/zclconf/go-cty/cty
 github.com/zclconf/go-cty/cty/convert
 github.com/zclconf/go-cty/cty/function
@@ -258,10 +262,10 @@ golang.org/x/crypto/openpgp/elgamal
 # golang.org/x/net v0.0.0-20191009170851-d66e71096ffb
 golang.org/x/net/context
 golang.org/x/net/trace
+golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
-golang.org/x/net/idna
 golang.org/x/net/http/httpguts
 golang.org/x/net/context/ctxhttp
 # golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
@@ -275,11 +279,11 @@ golang.org/x/sync/semaphore
 # golang.org/x/sys v0.0.0-20190804053845-51ab0e2deafa
 golang.org/x/sys/unix
 # golang.org/x/text v0.3.2
-golang.org/x/text/unicode/norm
 golang.org/x/text/transform
+golang.org/x/text/unicode/norm
 golang.org/x/text/secure/bidirule
 golang.org/x/text/unicode/bidi
-# golang.org/x/xerrors v0.0.0-20190513163551-3ee3066db522
+# golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 golang.org/x/xerrors
 golang.org/x/xerrors/internal
 # google.golang.org/api v0.9.0
