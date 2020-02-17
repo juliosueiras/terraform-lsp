@@ -4,12 +4,6 @@ release:
     owner: juliosueiras
     name: terraform-lsp
   name_template: '{{.Tag}}'
-brew:
-  name: terraform-lsp
-  commit_author:
-    name: goreleaserbot
-    email: goreleaser@carlosbecker.com
-  install: bin.install "terraform-lsp"
 scoop:
   name: terraform-lsp
   commit_author:
@@ -39,25 +33,19 @@ builds:
   binary: terraform-lsp
   lang: go
 archive:
-  name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm
-    }}v{{ .Arm }}{{ end }}'
-  format: tar.gz
-  files:
-  - licence*
-  - LICENCE*
-  - license*
-  - LICENSE*
-  - readme*
-  - README*
-  - changelog*
-  - CHANGELOG*
-nfpm:
-  name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm
-    }}v{{ .Arm }}{{ end }}'
-  bindir: /usr/local/bin
-snapcraft:
-  name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm
-    }}v{{ .Arm }}{{ end }}'
+  - id: terraform-lsp
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm
+      }}v{{ .Arm }}{{ end }}'
+    format: tar.gz
+    files:
+    - licence*
+    - LICENCE*
+    - license*
+    - LICENSE*
+    - readme*
+    - README*
+    - changelog*
+    - CHANGELOG*
 snapshot:
   name_template: SNAPSHOT-{{ .Commit }}
 checksum:
