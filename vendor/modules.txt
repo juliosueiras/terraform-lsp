@@ -181,6 +181,8 @@ github.com/hashicorp/terraform-svchost/auth
 github.com/hashicorp/yamux
 # github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af
 github.com/jmespath/go-jmespath
+# github.com/konsorten/go-windows-terminal-sequences v1.0.1
+github.com/konsorten/go-windows-terminal-sequences
 # github.com/mattn/go-colorable v0.1.1
 github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.7
@@ -208,6 +210,8 @@ github.com/posener/complete
 github.com/posener/complete/cmd/install
 github.com/posener/complete/cmd
 github.com/posener/complete/match
+# github.com/sirupsen/logrus v1.2.0
+github.com/sirupsen/logrus
 # github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1
 github.com/sourcegraph/go-lsp
 # github.com/spf13/afero v1.2.2
@@ -250,6 +254,7 @@ go.opencensus.io/internal/tagencoding
 go.opencensus.io/metric/metricproducer
 go.opencensus.io/resource
 # golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
+golang.org/x/crypto/ssh/terminal
 golang.org/x/crypto/openpgp
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/openpgp/armor
@@ -278,6 +283,7 @@ golang.org/x/oauth2/jwt
 golang.org/x/sync/semaphore
 # golang.org/x/sys v0.0.0-20190804053845-51ab0e2deafa
 golang.org/x/sys/unix
+golang.org/x/sys/windows
 # golang.org/x/text v0.3.2
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
