@@ -79,6 +79,7 @@ func NewProvisionerClient(name string, targetDir string) (*Client, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Failed to initialize plugin: %s", err)
 		}
+
 		// create a new resource provisioner.
 		raw, err := rpcClient.Dispense(plugin.ProvisionerPluginName)
 		if err != nil {
@@ -101,26 +102,36 @@ func NewClient(providerName string, targetDir string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+  
+  clientName := fmt.Sprintf("%s_%s", pluginMeta.Name, pluginMeta.Version)
+  // initialize a plugin Client.
+  var finalClient *Client
+  if Clients[clientName] == nil {
+    pluginClient := plugin.Client(*pluginMeta)
+    rpcClient, err := pluginClient.Client()
+    if err != nil {
+      return nil, fmt.Errorf("Failed to initialize plugin: %s", err)
+    }
 
-	// initialize a plugin Client.
-	pluginClient := plugin.Client(*pluginMeta)
-	rpcClient, err := pluginClient.Client()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to initialize plugin: %s", err)
-	}
 
-	// create a new resource provider.
-	raw, err := rpcClient.Dispense(plugin.ProviderPluginName)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to dispense plugin: %s", err)
-	}
+    // create a new resource provider.
+    raw, err := rpcClient.Dispense(plugin.ProviderPluginName)
+    if err != nil {
+      return nil, fmt.Errorf("Failed to dispense plugin: %s", err)
+    }
 
-	provider := raw.(*plugin.GRPCProvider)
+    provider := raw.(*plugin.GRPCProvider)
+    finalClient = &Client{
+      provider:     provider,
+      pluginClient: pluginClient,
+    }
 
-	return &Client{
-		provider:     provider,
-		pluginClient: pluginClient,
-	}, nil
+    Clients[clientName] = finalClient
+  } else {
+    finalClient = Clients[clientName]
+  }
+
+  return finalClient, nil
 }
 
 // findPlugin finds a plugin with the name specified in the arguments.
