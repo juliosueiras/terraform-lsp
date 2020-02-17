@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/go-lsp"
 	"github.com/spf13/afero"
 	"github.com/zclconf/go-cty/cty"
-	"log"
+  log "github.com/sirupsen/logrus"
 	"reflect"
 	"regexp"
 	"strings"
@@ -65,6 +65,10 @@ func CheckAndGetConfig(parser *configs.Parser, originalFile afero.File, line int
 
 // credits: https://stackoverflow.com/questions/28008566/how-to-compute-the-offset-from-column-and-line-number-go
 func FindOffset(fileText string, line, column int) int {
+  if column == 0 {
+    column = 1
+  }
+
 	currentCol := 1
 	currentLine := 1
 
@@ -79,13 +83,12 @@ func FindOffset(fileText string, line, column int) int {
 		} else {
 			currentCol++
 		}
-
 	}
 	return -1
 }
 
 func DumpLog(res interface{}) {
-	log.Println(spew.Sdump(res))
+	log.Debug(spew.Sdump(res))
 }
 
 func ParseVariables(vars hcl.Traversal, configVars map[string]*configs.Variable, completionItems []lsp.CompletionItem) []lsp.CompletionItem {

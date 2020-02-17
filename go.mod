@@ -8,7 +8,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/gogo/protobuf v1.2.1 // indirect
-	github.com/gruntwork-io/terragrunt v0.21.13
+	github.com/gruntwork-io/terragrunt v0.21.13 // indirect
 	github.com/hashicorp/go-hclog v0.9.0 // indirect
 	github.com/hashicorp/go-plugin v1.0.1-0.20190610192547-a1bc61569a26
 	github.com/hashicorp/hcl v1.0.0 // indirect
@@ -21,6 +21,7 @@ require (
 	github.com/mattn/go-zglob v0.0.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
+	github.com/sirupsen/logrus v1.2.0
 	github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1
 	github.com/spf13/afero v1.2.2
 	github.com/ulikunitz/xz v0.5.6 // indirect

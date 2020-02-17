@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform/configs"
 	"github.com/hashicorp/terraform/lang"
 	lsp "github.com/sourcegraph/go-lsp"
+  "net/url"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -26,13 +27,14 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 
 	fileURL := strings.Replace(string(vs.TextDocument.URI), "file://", "", 1)
 
-	fileDir := filepath.Dir(fileURL)
+  decodedFileURL , _ := url.QueryUnescape(fileURL)
+	fileDir := filepath.Dir(decodedFileURL)
 	res, _ := filepath.Glob(fileDir + "/*.tf")
 	var file *configs.File
 	var resultFiles []*configs.File
 
 	for _, v := range res {
-		if fileURL == v {
+		if strings.ToLower(decodedFileURL) == strings.ToLower(v) {
 			continue
 		}
 
@@ -218,6 +220,7 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 
 	if expr != nil {
 		helper.DumpLog("Found Expression")
+    helper.DumpLog(posHCL)
 		helper.DumpLog(expr)
 		//.*for.*in\s+([^:]*)
 		//te, te2 := hclsyntax.ParseExpression([]byte("aws[0].test"), "test", hcl.Pos{

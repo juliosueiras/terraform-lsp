@@ -5,7 +5,7 @@ import (
 	lsp "github.com/sourcegraph/go-lsp"
   "github.com/juliosueiras/terraform-lsp/memfs"
   "github.com/spf13/afero"
-	"log"
+  log "github.com/sirupsen/logrus"
 )
 
 func Initialize(ctx context.Context, vs lsp.InitializeParams) (lsp.InitializeResult, error) {

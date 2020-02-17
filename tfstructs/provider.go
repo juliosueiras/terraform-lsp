@@ -2,9 +2,12 @@
 package tfstructs
 
 import (
+  "unicode/utf8"
 	"fmt"
 	"go/build"
-	"log"
+  log "github.com/sirupsen/logrus"
+  oldLog "log"
+  "io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -141,6 +144,8 @@ func findPlugin(pluginType string, pluginName string, targetDir string) (*discov
 		return nil, err
 	}
 
+  oldLog.SetOutput(ioutil.Discard)
+
 	pluginMetaSet := discovery.FindPlugins(pluginType, dirs).WithName(pluginName)
 
 	// if pluginMetaSet doesn't have any pluginMeta, pluginMetaSet.Newest() will call panic.
@@ -182,13 +187,31 @@ func pluginDirs(targetDir string) ([]string, error) {
 	// auto installed directory
 	// This does not take into account overriding the data directory.
 	autoInstalledDir := ""
-	for dir := targetDir; dir != "" && strings.HasPrefix(dir, homeDir); dir = filepath.Dir(dir) {
-		log.Printf("[DEBUG] search .terraform dir in %s", dir)
+
+  s, i := utf8.DecodeRuneInString("\\")
+  if []rune(targetDir)[0] == s {
+    // https://stackoverflow.com/questions/48798588/how-do-you-remove-the-first-character-of-a-string
+    targetDir = targetDir[i:] 
+  }
+
+  for dir := targetDir; dir != ""; dir = filepath.Dir(dir) {
+
+    if dir[1:] == ":\\" {
+      if _, err := os.Stat(filepath.Join(dir, ".terraform")); err == nil {
+        autoInstalledDir = filepath.Join(dir, ".terraform", "plugins", arch)
+      }
+      break
+    }
+
+		log.Debug("[DEBUG] search .terraform dir in %s", dir)
+
 		if _, err := os.Stat(filepath.Join(dir, ".terraform")); err == nil {
 			autoInstalledDir = filepath.Join(dir, ".terraform", "plugins", arch)
 			break
 		}
+
 	}
+
 	if autoInstalledDir != "" {
 		dirs = append(dirs, autoInstalledDir)
 	}
@@ -208,7 +231,7 @@ func pluginDirs(targetDir string) ([]string, error) {
 	gopath := build.Default.GOPATH
 	dirs = append(dirs, filepath.Join(gopath, "bin"))
 
-	log.Printf("[DEBUG] plugin dirs: %#v", dirs)
+	log.Debug("[DEBUG] plugin dirs: %#v", dirs)
 	return dirs, nil
 }
 
