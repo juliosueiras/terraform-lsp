@@ -30,7 +30,7 @@ builds:
   binary: terraform-lsp
   lang: go
   flags:
-  - -mod vendor
+  - -mod=vendor
 archives:
   - id: terraform-lsp
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm

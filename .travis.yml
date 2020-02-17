@@ -10,6 +10,8 @@ jobs:
       services:
         - docker
       language: go
+      go:
+      - 1.12
       #if: tag IS present
       script: skip
       deploy:

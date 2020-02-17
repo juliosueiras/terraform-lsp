@@ -28,6 +28,10 @@ Release can be found [here](https://github.com/juliosueiras/terraform-lsp/releas
 
 ## Building
 
+### Requirement
+
+it will need Go 1.12+
+
 ### Native
 
 1. Download a [release](https://github.com/juliosueiras/terraform-lsp/releases)
