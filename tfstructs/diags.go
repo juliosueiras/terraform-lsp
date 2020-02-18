@@ -3,6 +3,7 @@ package tfstructs
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/configs"
+	v2 "github.com/hashicorp/hcl/v2"
 	"github.com/zclconf/go-cty/cty"
 	//"github.com/juliosueiras/terraform-lsp/helper"
 	"github.com/juliosueiras/terraform-lsp/memfs"
@@ -25,7 +26,18 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 		originalFile = fileName
 	}
 
-	_, hclDiags := parser.LoadHCLFile(fileName)
+  var hclDiags v2.Diagnostics 
+  isTFVars := (filepath.Ext(originalFile) == ".tfvars")
+
+  var diagName string
+
+  if isTFVars {
+    _, hclDiags = parser.LoadValuesFile(fileName)
+    diagName = "TFVars"
+  } else {
+    _, hclDiags = parser.LoadHCLFile(fileName)
+    diagName = "HCL"
+  }
 
 	for _, diag := range hclDiags {
 		result = append(result, lsp.Diagnostic{
@@ -41,9 +53,13 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 					Character: diag.Subject.End.Column - 1,
 				},
 			},
-			Source: "HCL",
+      Source: diagName,
 		})
 	}
+
+  if isTFVars {
+    return result
+  }
 
 	cfg, tfDiags := parser.LoadConfigFile(fileName)
 	parser.ForceFileSource(originalFileName, []byte(""))
@@ -71,14 +87,17 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 
 	variables := map[string]cty.Value{
 		"path": cty.ObjectVal(map[string]cty.Value{
-			"cwd":    cty.StringVal(""),
-			"module": cty.StringVal(""),
+			"cwd":    cty.StringVal(filepath.Dir(originalFile)),
+			"module": cty.StringVal(filepath.Dir(originalFile)),
 		}),
 		"var":    cty.DynamicVal, // Need to check for undefined vars
 		"module": cty.DynamicVal,
 		"local":  cty.DynamicVal,
 		"each":   cty.DynamicVal,
 		"count":  cty.DynamicVal,
+    "terraform":  cty.ObjectVal(map[string]cty.Value{
+      "workspace": cty.StringVal(""),
+    }),
 	}
 
 	for k, v := range resourceTypes {
