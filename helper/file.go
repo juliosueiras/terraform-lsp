@@ -88,7 +88,11 @@ func FindOffset(fileText string, line, column int) int {
 }
 
 func DumpLog(res interface{}) {
-	log.Debug(spew.Sdump(res))
+  result := spew.Sdump(res)
+  strSlice:=strings.Split(result, "\n")
+  for _, s := range strSlice {
+    log.Debug(s)
+  }
 }
 
 func ParseVariables(vars hcl.Traversal, configVars map[string]*configs.Variable, completionItems []lsp.CompletionItem) []lsp.CompletionItem {

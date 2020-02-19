@@ -7,9 +7,13 @@ import (
 	"github.com/hashicorp/terraform/addrs"
 	"github.com/hashicorp/terraform/configs"
 	"github.com/juliosueiras/terraform-lsp/hclstructs"
+	"github.com/zclconf/go-cty/cty"
 	"github.com/juliosueiras/terraform-lsp/helper"
+	"github.com/hashicorp/terraform/lang"
 	"github.com/sourcegraph/go-lsp"
 	"reflect"
+  "path/filepath"
+  "os"
 )
 
 type GetVarAttributeRequest struct {
@@ -21,6 +25,36 @@ type GetVarAttributeRequest struct {
 }
 
 func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionItem {
+	scope := lang.Scope{}
+
+  targetDir := filepath.Dir(request.FileDir)
+  resultedDir := ""
+	searchLevel := 4
+	for dir := targetDir; dir != "" && searchLevel != 0; dir = filepath.Dir(dir) {
+		if _, err := os.Stat(filepath.Join(dir, ".terraform")); err == nil {
+      resultedDir = dir
+			break
+		}
+		searchLevel -= 1
+	}
+
+  variables := map[string]cty.Value{
+    "path": cty.ObjectVal(map[string]cty.Value{
+      "cwd":    cty.StringVal(filepath.Dir(request.FileDir)),
+      "module": cty.StringVal(filepath.Dir(request.FileDir)),
+      "root": cty.StringVal(resultedDir),
+    }),
+    "var":    cty.DynamicVal, // Need to check for undefined vars
+    "module": cty.DynamicVal,
+    "local":  cty.DynamicVal,
+    "each":   cty.DynamicVal,
+    "count":  cty.DynamicVal,
+    "terraform": cty.ObjectVal(map[string]cty.Value{
+      "workspace": cty.StringVal(""),
+    }),
+  }
+
+
 	if request.Variables.RootName() == "var" {
 		vars := request.Variables
 
@@ -35,7 +69,18 @@ func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionI
 				}
 			}
 
-			origType := reflect.TypeOf(found.Expr)
+
+      testVal, _ := found.Expr.Value(
+        &hcl.EvalContext{
+          // Build Full Tree
+          Variables: variables,
+          Functions: scope.Functions(),
+        },
+      )
+
+      helper.DumpLog(testVal)
+
+      origType := reflect.TypeOf(found.Expr)
 
 			if origType == hclstructs.ObjectConsExpr() {
 				items := found.Expr.(*hclsyntax.ObjectConsExpr).Items
@@ -60,6 +105,10 @@ func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionI
 					})
 				}
 			}
+
+      helper.DumpLog(request.Variables[2:])
+      helper.DumpLog(testVal.Type())
+      request.Result =  append(request.Result, helper.ParseOtherAttr(request.Variables[2:], testVal.Type(), request.Result)...)
 
 			return request.Result
 

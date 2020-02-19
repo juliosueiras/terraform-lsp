@@ -37,6 +37,26 @@ func GetModuleVariables(moduleAddr string, config hcl.Body, targetDir string) (m
 	return t.Variables, true
 }
 
+func GetLocalsForDiags(local configs.Local, targetDir string, variables map[string]cty.Value) hcl.Diagnostics {
+	scope := lang.Scope{}
+
+  //_, diags := scope.EvalExpr(local, cty.DynamicPseudoType)
+  _, diags := local.Expr.Value(
+    &hcl.EvalContext{
+      // Build Full Tree
+      Variables: variables,
+      Functions: scope.Functions(),
+    },
+  )
+	//res, _, diags := hcldec.PartialDecode(config, nil, &hcl.EvalContext{
+	//	// Build Full Tree
+	//	Variables: variables,
+	//	Functions: scope.Functions(),
+	//})
+
+	return diags
+}
+
 func GetResourceSchemaForDiags(resourceType string, config hcl.Body, targetDir string, overrideProvider string, variables map[string]cty.Value) *TerraformSchema {
 	var provider *Client
 	var err error
