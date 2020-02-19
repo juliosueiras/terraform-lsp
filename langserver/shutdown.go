@@ -2,9 +2,9 @@ package langserver
 
 import (
 	"context"
-  "github.com/juliosueiras/terraform-lsp/memfs"
+	"github.com/juliosueiras/terraform-lsp/memfs"
 
-  log "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	lsp "github.com/sourcegraph/go-lsp"
 )
 
@@ -14,6 +14,6 @@ func Shutdown(ctx context.Context, vs lsp.None) error {
 		return err
 	}
 
-  log.Info("Shutdown")
+	log.Info("Shutdown")
 	return nil
 }

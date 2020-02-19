@@ -2,25 +2,38 @@ package tfstructs
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/configs"
 	v2 "github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/terraform/configs"
 	"github.com/zclconf/go-cty/cty"
+	"net/url"
+	"strings"
+	"unicode/utf8"
 	//"github.com/juliosueiras/terraform-lsp/helper"
-	"github.com/juliosueiras/terraform-lsp/memfs"
+	terragruntConfig "github.com/gruntwork-io/terragrunt/config"
+	terragruntOptions "github.com/gruntwork-io/terragrunt/options"
 	oldHCL2 "github.com/hashicorp/hcl2/hcl"
-  terragruntConfig "github.com/gruntwork-io/terragrunt/config"
-  terragruntOptions "github.com/gruntwork-io/terragrunt/options"
+	"github.com/juliosueiras/terraform-lsp/memfs"
 	"github.com/sourcegraph/go-lsp"
 	"github.com/spf13/afero"
 	"path/filepath"
 )
 
 func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
-  
+
 	parser := configs.NewParser(memfs.MemFs)
 	result := make([]lsp.Diagnostic, 0)
 	originalFileName := originalFile
-  
+
+	originalFileNameDecoded, _ := url.QueryUnescape(originalFileName)
+
+	if strings.Contains(originalFileNameDecoded, ":/") {
+		s, i := utf8.DecodeRuneInString("/")
+		if []rune(originalFileNameDecoded)[0] == s {
+			// https://stackoverflow.com/questions/48798588/how-do-you-remove-the-first-character-of-a-string
+			originalFileNameDecoded = originalFileNameDecoded[i:]
+		}
+	}
+
 	if exist, _ := afero.Exists(memfs.MemFs, fileName); !exist {
 		return result
 	}
@@ -29,48 +42,48 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 		originalFile = fileName
 	}
 
-  var hclDiags v2.Diagnostics 
-  isTFVars := (filepath.Ext(originalFile) == ".tfvars")
-  isTerragrunt := (filepath.Base(originalFile) == "terragrunt.hcl")
+	var hclDiags v2.Diagnostics
+	isTFVars := (filepath.Ext(originalFile) == ".tfvars")
+	isTerragrunt := (filepath.Base(originalFile) == "terragrunt.hcl")
 
-  var diagName string
+	var diagName string
 
-  if isTFVars {
-    _, hclDiags = parser.LoadValuesFile(fileName)
-    diagName = "TFVars"
-  } else if isTerragrunt {
-    fileContent, _ := afero.ReadFile(memfs.MemFs, fileName)
+	if isTFVars {
+		_, hclDiags = parser.LoadValuesFile(fileName)
+		diagName = "TFVars"
+	} else if isTerragrunt {
+		fileContent, _ := afero.ReadFile(memfs.MemFs, fileName)
 
-    _, terragruntDiags := terragruntConfig.ParseConfigString(string(fileContent), &terragruntOptions.TerragruntOptions{}, &terragruntConfig.IncludeConfig{}, originalFile)
+		_, terragruntDiags := terragruntConfig.ParseConfigString(string(fileContent), &terragruntOptions.TerragruntOptions{}, &terragruntConfig.IncludeConfig{}, originalFile)
 
-    if terragruntDiags == nil {
-      return result
-    }
+		if terragruntDiags == nil {
+			return result
+		}
 
-    for _, diag := range terragruntDiags.(oldHCL2.Diagnostics) {
-      result = append(result, lsp.Diagnostic{
-        Severity: lsp.DiagnosticSeverity(diag.Severity),
-        Message:  diag.Detail,
-        Range: lsp.Range{
-          Start: lsp.Position{
-            Line:      diag.Subject.Start.Line - 1,
-            Character: diag.Subject.Start.Column - 1,
-          },
-          End: lsp.Position{
-            Line:      diag.Subject.End.Line - 1,
-            Character: diag.Subject.End.Column - 1,
-          },
-        },
-        Source: "Terragrunt",
-      })
-    }
+		for _, diag := range terragruntDiags.(oldHCL2.Diagnostics) {
+			result = append(result, lsp.Diagnostic{
+				Severity: lsp.DiagnosticSeverity(diag.Severity),
+				Message:  diag.Detail,
+				Range: lsp.Range{
+					Start: lsp.Position{
+						Line:      diag.Subject.Start.Line - 1,
+						Character: diag.Subject.Start.Column - 1,
+					},
+					End: lsp.Position{
+						Line:      diag.Subject.End.Line - 1,
+						Character: diag.Subject.End.Column - 1,
+					},
+				},
+				Source: "Terragrunt",
+			})
+		}
 
-    return result
+		return result
 
-  } else {
-    _, hclDiags = parser.LoadHCLFile(fileName)
-    diagName = "HCL"
-  }
+	} else {
+		_, hclDiags = parser.LoadHCLFile(fileName)
+		diagName = "HCL"
+	}
 
 	for _, diag := range hclDiags {
 		result = append(result, lsp.Diagnostic{
@@ -86,13 +99,13 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 					Character: diag.Subject.End.Column - 1,
 				},
 			},
-      Source: diagName,
+			Source: diagName,
 		})
 	}
 
-  if isTFVars {
-    return result
-  }
+	if isTFVars {
+		return result
+	}
 
 	cfg, tfDiags := parser.LoadConfigFile(fileName)
 	parser.ForceFileSource(originalFileName, []byte(""))
@@ -120,17 +133,17 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 
 	variables := map[string]cty.Value{
 		"path": cty.ObjectVal(map[string]cty.Value{
-			"cwd":    cty.StringVal(filepath.Dir(originalFile)),
-			"module": cty.StringVal(filepath.Dir(originalFile)),
+			"cwd":    cty.StringVal(filepath.Dir(originalFileNameDecoded)),
+			"module": cty.StringVal(filepath.Dir(originalFileNameDecoded)),
 		}),
 		"var":    cty.DynamicVal, // Need to check for undefined vars
 		"module": cty.DynamicVal,
 		"local":  cty.DynamicVal,
 		"each":   cty.DynamicVal,
 		"count":  cty.DynamicVal,
-    "terraform":  cty.ObjectVal(map[string]cty.Value{
-      "workspace": cty.StringVal(""),
-    }),
+		"terraform": cty.ObjectVal(map[string]cty.Value{
+			"workspace": cty.StringVal(""),
+		}),
 	}
 
 	for k, v := range resourceTypes {

@@ -3,14 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	log "github.com/sirupsen/logrus"
+	oldLog "log"
 	"os"
 	"strings"
-  oldLog "log"
-  log "github.com/sirupsen/logrus"
 
-  "io/ioutil"
 	"github.com/creachadair/jrpc2/channel"
 	"github.com/juliosueiras/terraform-lsp/langserver"
+	"io/ioutil"
 )
 
 var location = flag.String("log-location", "", "Location of the lsp log")
@@ -26,9 +26,8 @@ var version = flag.Bool("version", false, "Show version")
 func main() {
 	flag.Parse()
 
-  oldLog.SetOutput(ioutil.Discard)
-  oldLog.SetFlags(0)
-
+	oldLog.SetOutput(ioutil.Discard)
+	oldLog.SetFlags(0)
 
 	if *version {
 		fmt.Printf("v%s, commit: %s, build on: %s", strings.Trim(Version, "v"), GitCommit, Date)
@@ -37,13 +36,13 @@ func main() {
 
 	Server := langserver.CreateServer()
 
-  log.Infof("Log Level is Debug: %t", *debug)
+	log.Infof("Log Level is Debug: %t", *debug)
 
-  if *debug {
-    log.SetLevel(log.DebugLevel)
-  } else {
-    log.SetLevel(log.InfoLevel)
-  }
+	if *debug {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
+	}
 
 	if *enableLogFile {
 		f, err := os.OpenFile(fmt.Sprintf("%stf-lsp.log", *location), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)

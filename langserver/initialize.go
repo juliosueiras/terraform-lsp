@@ -2,10 +2,10 @@ package langserver
 
 import (
 	"context"
+	"github.com/juliosueiras/terraform-lsp/memfs"
+	log "github.com/sirupsen/logrus"
 	lsp "github.com/sourcegraph/go-lsp"
-  "github.com/juliosueiras/terraform-lsp/memfs"
-  "github.com/spf13/afero"
-  log "github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 )
 
 func Initialize(ctx context.Context, vs lsp.InitializeParams) (lsp.InitializeResult, error) {

@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform/configs"
 	"github.com/hashicorp/terraform/lang"
 	lsp "github.com/sourcegraph/go-lsp"
-  "net/url"
+	"net/url"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -16,18 +16,18 @@ import (
 	//"github.com/hashicorp/terraform/terraform"
 	"github.com/juliosueiras/terraform-lsp/hclstructs"
 	"github.com/juliosueiras/terraform-lsp/helper"
-	"github.com/juliosueiras/terraform-lsp/tfstructs"
 	"github.com/juliosueiras/terraform-lsp/memfs"
-  "github.com/spf13/afero"
+	"github.com/juliosueiras/terraform-lsp/tfstructs"
+	"github.com/spf13/afero"
 )
 
 func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.CompletionList, error) {
-  //log.Println(tfstructs.Clients)
+	//log.Println(tfstructs.Clients)
 	parser := configs.NewParser(memfs.MemFs)
 
 	fileURL := strings.Replace(string(vs.TextDocument.URI), "file://", "", 1)
 
-  decodedFileURL , _ := url.QueryUnescape(fileURL)
+	decodedFileURL, _ := url.QueryUnescape(fileURL)
 	fileDir := filepath.Dir(decodedFileURL)
 	res, _ := filepath.Glob(fileDir + "/*.tf")
 	var file *configs.File
@@ -220,7 +220,7 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 
 	if expr != nil {
 		helper.DumpLog("Found Expression")
-    helper.DumpLog(posHCL)
+		helper.DumpLog(posHCL)
 		helper.DumpLog(expr)
 		//.*for.*in\s+([^:]*)
 		//te, te2 := hclsyntax.ParseExpression([]byte("aws[0].test"), "test", hcl.Pos{

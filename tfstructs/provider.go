@@ -2,12 +2,11 @@
 package tfstructs
 
 import (
-  "unicode/utf8"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"go/build"
-  log "github.com/sirupsen/logrus"
-  oldLog "log"
-  "io/ioutil"
+	"io/ioutil"
+	oldLog "log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -105,36 +104,35 @@ func NewClient(providerName string, targetDir string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-  
-  clientName := fmt.Sprintf("%s_%s", pluginMeta.Name, pluginMeta.Version)
-  // initialize a plugin Client.
-  var finalClient *Client
-  if Clients[clientName] == nil {
-    pluginClient := plugin.Client(*pluginMeta)
-    rpcClient, err := pluginClient.Client()
-    if err != nil {
-      return nil, fmt.Errorf("Failed to initialize plugin: %s", err)
-    }
 
+	clientName := fmt.Sprintf("%s_%s", pluginMeta.Name, pluginMeta.Version)
+	// initialize a plugin Client.
+	var finalClient *Client
+	if Clients[clientName] == nil {
+		pluginClient := plugin.Client(*pluginMeta)
+		rpcClient, err := pluginClient.Client()
+		if err != nil {
+			return nil, fmt.Errorf("Failed to initialize plugin: %s", err)
+		}
 
-    // create a new resource provider.
-    raw, err := rpcClient.Dispense(plugin.ProviderPluginName)
-    if err != nil {
-      return nil, fmt.Errorf("Failed to dispense plugin: %s", err)
-    }
+		// create a new resource provider.
+		raw, err := rpcClient.Dispense(plugin.ProviderPluginName)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to dispense plugin: %s", err)
+		}
 
-    provider := raw.(*plugin.GRPCProvider)
-    finalClient = &Client{
-      provider:     provider,
-      pluginClient: pluginClient,
-    }
+		provider := raw.(*plugin.GRPCProvider)
+		finalClient = &Client{
+			provider:     provider,
+			pluginClient: pluginClient,
+		}
 
-    Clients[clientName] = finalClient
-  } else {
-    finalClient = Clients[clientName]
-  }
+		Clients[clientName] = finalClient
+	} else {
+		finalClient = Clients[clientName]
+	}
 
-  return finalClient, nil
+	return finalClient, nil
 }
 
 // findPlugin finds a plugin with the name specified in the arguments.
@@ -144,7 +142,7 @@ func findPlugin(pluginType string, pluginName string, targetDir string) (*discov
 		return nil, err
 	}
 
-  oldLog.SetOutput(ioutil.Discard)
+	oldLog.SetOutput(ioutil.Discard)
 
 	pluginMetaSet := discovery.FindPlugins(pluginType, dirs).WithName(pluginName)
 
@@ -188,21 +186,8 @@ func pluginDirs(targetDir string) ([]string, error) {
 	// This does not take into account overriding the data directory.
 	autoInstalledDir := ""
 
-  s, i := utf8.DecodeRuneInString("\\")
-  if []rune(targetDir)[0] == s {
-    // https://stackoverflow.com/questions/48798588/how-do-you-remove-the-first-character-of-a-string
-    targetDir = targetDir[i:] 
-  }
-
-  searchLevel := 4
-  for dir := targetDir; dir != "" && searchLevel != 0; dir = filepath.Dir(dir) {
-
-    if dir[1:] == ":\\" {
-      if _, err := os.Stat(filepath.Join(dir, ".terraform")); err == nil {
-        autoInstalledDir = filepath.Join(dir, ".terraform", "plugins", arch)
-      }
-      break
-    }
+	searchLevel := 4
+	for dir := targetDir; dir != "" && searchLevel != 0; dir = filepath.Dir(dir) {
 
 		log.Debug("[DEBUG] search .terraform dir in %s", dir)
 
@@ -211,7 +196,7 @@ func pluginDirs(targetDir string) ([]string, error) {
 			break
 		}
 
-    searchLevel -= 1
+		searchLevel -= 1
 	}
 
 	if autoInstalledDir != "" {

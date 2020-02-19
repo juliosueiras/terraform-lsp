@@ -7,10 +7,10 @@ import (
 	"github.com/hashicorp/terraform/configs"
 	"github.com/juliosueiras/terraform-lsp/hclstructs"
 	"github.com/juliosueiras/terraform-lsp/memfs"
+	log "github.com/sirupsen/logrus"
 	"github.com/sourcegraph/go-lsp"
 	"github.com/spf13/afero"
 	"github.com/zclconf/go-cty/cty"
-  log "github.com/sirupsen/logrus"
 	"reflect"
 	"regexp"
 	"strings"
@@ -18,7 +18,7 @@ import (
 )
 
 func CheckAndGetConfig(parser *configs.Parser, originalFile afero.File, line int, character int) (*configs.File, hcl.Diagnostics, int, *hclsyntax.Body, bool) {
-  fileText, _ := afero.ReadFile(memfs.MemFs, originalFile.Name())
+	fileText, _ := afero.ReadFile(memfs.MemFs, originalFile.Name())
 	result := make([]byte, 1)
 	pos := FindOffset(string(fileText), line, character)
 
@@ -65,9 +65,9 @@ func CheckAndGetConfig(parser *configs.Parser, originalFile afero.File, line int
 
 // credits: https://stackoverflow.com/questions/28008566/how-to-compute-the-offset-from-column-and-line-number-go
 func FindOffset(fileText string, line, column int) int {
-  if column == 0 {
-    column = 1
-  }
+	if column == 0 {
+		column = 1
+	}
 
 	currentCol := 1
 	currentLine := 1

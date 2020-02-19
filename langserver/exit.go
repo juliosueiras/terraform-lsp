@@ -2,10 +2,10 @@ package langserver
 
 import (
 	"context"
-  "os"
-  "github.com/juliosueiras/terraform-lsp/memfs"
+	"github.com/juliosueiras/terraform-lsp/memfs"
+	"os"
 
-  log "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	lsp "github.com/sourcegraph/go-lsp"
 )
 
@@ -15,7 +15,7 @@ func Exit(ctx context.Context, vs lsp.None) error {
 		return err
 	}
 
-  log.Info("Exited")
+	log.Info("Exited")
 	os.Exit(0)
 	return nil
 }
