@@ -1,6 +1,9 @@
 package tfstructs
 
 import (
+	"path/filepath"
+	"strings"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hcldec"
 	"github.com/hashicorp/terraform/configs"
@@ -10,8 +13,6 @@ import (
 	"github.com/juliosueiras/terraform-lsp/helper"
 	"github.com/juliosueiras/terraform-lsp/memfs"
 	"github.com/zclconf/go-cty/cty"
-	"path/filepath"
-	"strings"
 )
 
 type TerraformSchema struct {
@@ -109,7 +110,7 @@ func GetResourceSchema(resourceType string, config hcl.Body, targetDir string, o
 		Variables: map[string]cty.Value{
 			"path": cty.ObjectVal(map[string]cty.Value{
 				"cwd":    cty.StringVal(""),
-				"module": cty.StringVal(""),
+				"module": cty.StringVal(targetDir),
 			}),
 			"data":   cty.DynamicVal,
 			"var":    cty.DynamicVal, // Need to check for undefined vars
@@ -190,7 +191,7 @@ func GetDataSourceSchema(dataSourceType string, config hcl.Body, targetDir strin
 		Variables: map[string]cty.Value{
 			"path": cty.ObjectVal(map[string]cty.Value{
 				"cwd":    cty.StringVal(""),
-				"module": cty.StringVal(""),
+				"module": cty.StringVal(targetDir),
 			}),
 			"data":   cty.DynamicVal,
 			"var":    cty.DynamicVal, // Need to check for undefined vars
@@ -295,7 +296,7 @@ func GetProviderSchema(providerType string, config hcl.Body, targetDir string) *
 		Variables: map[string]cty.Value{
 			"path": cty.ObjectVal(map[string]cty.Value{
 				"cwd":    cty.StringVal(""),
-				"module": cty.StringVal(""),
+				"module": cty.StringVal(targetDir),
 			}),
 			"data":   cty.DynamicVal,
 			"var":    cty.DynamicVal, // Need to check for undefined vars
