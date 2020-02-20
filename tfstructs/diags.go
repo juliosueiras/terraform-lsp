@@ -133,6 +133,14 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 		resourceTypes[v.Type][v.Name] = cty.DynamicVal
 	}
 
+	if strings.Contains(originalFileNameDecoded, "\\") {
+		s, i := utf8.DecodeRuneInString("\\")
+    if []rune(originalFileNameDecoded)[0] == s {
+			// https://stackoverflow.com/questions/48798588/how-do-you-remove-the-first-character-of-a-string
+			originalFileNameDecoded = originalFileNameDecoded[i:]
+		}
+	}
+
   targetDir := filepath.Dir(originalFileNameDecoded)
   resultedDir := ""
 	searchLevel := 4
@@ -211,7 +219,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 	}
 
   for _, local := range cfg.Locals {
-		diags := GetLocalsForDiags(*local, filepath.Dir(originalFile), variables)
+		diags := GetLocalsForDiags(*local, filepath.Dir(originalFileNameDecoded), variables)
 
 		if diags != nil {
 			for _, diag := range diags {
@@ -261,7 +269,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 	for _, v := range cfg.ProviderConfigs {
 		providerType := v.Name
 
-		tfSchema := GetProviderSchemaForDiags(providerType, v.Config, filepath.Dir(originalFile), variables)
+		tfSchema := GetProviderSchemaForDiags(providerType, v.Config, filepath.Dir(originalFileNameDecoded), variables)
 
 		if tfSchema != nil {
 			for _, diag := range tfSchema.Diags {
@@ -308,7 +316,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 			providerType = v.ProviderConfigRef.Name
 		}
 
-		tfSchema := GetResourceSchemaForDiags(resourceType, v.Config, filepath.Dir(originalFile), providerType, variables)
+		tfSchema := GetResourceSchemaForDiags(resourceType, v.Config, filepath.Dir(originalFileNameDecoded), providerType, variables)
 
 		if tfSchema != nil {
 			for _, diag := range tfSchema.Diags {
@@ -354,7 +362,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 			providerType = v.ProviderConfigRef.Name
 		}
 
-		tfSchema := GetDataSourceSchemaForDiags(resourceType, v.Config, filepath.Dir(originalFile), providerType, variables)
+		tfSchema := GetDataSourceSchemaForDiags(resourceType, v.Config, filepath.Dir(originalFileNameDecoded), providerType, variables)
 
 		if tfSchema != nil {
 			for _, diag := range tfSchema.Diags {

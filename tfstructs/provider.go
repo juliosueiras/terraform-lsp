@@ -3,6 +3,7 @@ package tfstructs
 
 import (
 	"fmt"
+  "unicode/utf8"
 	log "github.com/sirupsen/logrus"
 	"go/build"
 	"io/ioutil"
@@ -187,6 +188,15 @@ func pluginDirs(targetDir string) ([]string, error) {
 	autoInstalledDir := ""
 
 	searchLevel := 4
+
+	if strings.Contains(targetDir, "\\") {
+		s, i := utf8.DecodeRuneInString("\\")
+    if []rune(targetDir)[0] == s {
+			// https://stackoverflow.com/questions/48798588/how-do-you-remove-the-first-character-of-a-string
+			targetDir = targetDir[i:]
+		}
+	}
+
 	for dir := targetDir; dir != "" && searchLevel != 0; dir = filepath.Dir(dir) {
 
 		log.Debug("[DEBUG] search .terraform dir in %s", dir)
