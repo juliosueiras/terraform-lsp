@@ -1,6 +1,9 @@
 package tfstructs
 
 import (
+  "unicode/utf8"
+  "strings"
+	"net/url"
 	"fmt"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -26,8 +29,16 @@ type GetVarAttributeRequest struct {
 
 func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionItem {
 	scope := lang.Scope{}
+  fileDir, _ := url.QueryUnescape(request.FileDir)
+	if strings.Contains(fileDir, "\\") {
+		s, i := utf8.DecodeRuneInString("\\")
+    if []rune(fileDir)[0] == s {
+			// https://stackoverflow.com/questions/48798588/how-do-you-remove-the-first-character-of-a-string
+			fileDir = fileDir[i:]
+		}
+	}
 
-  targetDir := filepath.Dir(request.FileDir)
+  targetDir := filepath.Dir(fileDir)
   resultedDir := ""
 	searchLevel := 4
 	for dir := targetDir; dir != "" && searchLevel != 0; dir = filepath.Dir(dir) {
@@ -38,10 +49,13 @@ func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionI
 		searchLevel -= 1
 	}
 
+  helper.DumpLog(fileDir)
+  helper.DumpLog(targetDir)
+
   variables := map[string]cty.Value{
     "path": cty.ObjectVal(map[string]cty.Value{
-      "cwd":    cty.StringVal(filepath.Dir(request.FileDir)),
-      "module": cty.StringVal(filepath.Dir(request.FileDir)),
+      "cwd":    cty.StringVal(fileDir),
+      "module": cty.StringVal(fileDir),
       "root": cty.StringVal(resultedDir),
     }),
     "var":    cty.DynamicVal, // Need to check for undefined vars
