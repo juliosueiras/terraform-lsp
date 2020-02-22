@@ -7,7 +7,7 @@ require (
 	github.com/creack/pty v1.1.9 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-errors/errors v1.0.1 // indirect
-	github.com/go-language-server/uri v0.2.0 // indirect
+	github.com/go-language-server/uri v0.2.0
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/gruntwork-io/terragrunt v0.21.13
 	github.com/hashicorp/go-hclog v0.9.0 // indirect

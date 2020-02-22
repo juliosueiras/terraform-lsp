@@ -6,9 +6,6 @@ import (
 	v2 "github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/terraform/configs"
 	"github.com/zclconf/go-cty/cty"
-	"net/url"
-	"strings"
-	"unicode/utf8"
 	//"github.com/juliosueiras/terraform-lsp/helper"
 	terragruntConfig "github.com/gruntwork-io/terragrunt/config"
 	terragruntOptions "github.com/gruntwork-io/terragrunt/options"
@@ -25,16 +22,6 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 	parser := configs.NewParser(memfs.MemFs)
 	result := make([]lsp.Diagnostic, 0)
 	originalFileName := originalFile
-
-	originalFileNameDecoded, _ := url.QueryUnescape(originalFileName)
-
-	if strings.Contains(originalFileNameDecoded, ":/") {
-		s, i := utf8.DecodeRuneInString("/")
-		if []rune(originalFileNameDecoded)[0] == s {
-			// https://stackoverflow.com/questions/48798588/how-do-you-remove-the-first-character-of-a-string
-			originalFileNameDecoded = originalFileNameDecoded[i:]
-		}
-	}
 
 	if exist, _ := afero.Exists(memfs.MemFs, fileName); !exist {
 		return result
@@ -133,15 +120,8 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 		resourceTypes[v.Type][v.Name] = cty.DynamicVal
 	}
 
-	if strings.Contains(originalFileNameDecoded, "\\") {
-		s, i := utf8.DecodeRuneInString("\\")
-    if []rune(originalFileNameDecoded)[0] == s {
-			// https://stackoverflow.com/questions/48798588/how-do-you-remove-the-first-character-of-a-string
-			originalFileNameDecoded = originalFileNameDecoded[i:]
-		}
-	}
+  targetDir := filepath.Dir(originalFileName)
 
-  targetDir := filepath.Dir(originalFileNameDecoded)
   resultedDir := ""
 	searchLevel := 4
 	for dir := targetDir; dir != "" && searchLevel != 0; dir = filepath.Dir(dir) {
@@ -154,8 +134,8 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 
 	variables := map[string]cty.Value{
 		"path": cty.ObjectVal(map[string]cty.Value{
-			"cwd":    cty.StringVal(filepath.Dir(originalFileNameDecoded)),
-			"module": cty.StringVal(filepath.Dir(originalFileNameDecoded)),
+			"cwd":    cty.StringVal(filepath.Dir(originalFileName)),
+			"module": cty.StringVal(filepath.Dir(originalFileName)),
 			"root": cty.StringVal(resultedDir),
 		}),
 		"var":    cty.DynamicVal, // Need to check for undefined vars
@@ -219,7 +199,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 	}
 
   for _, local := range cfg.Locals {
-		diags := GetLocalsForDiags(*local, filepath.Dir(originalFileNameDecoded), variables)
+		diags := GetLocalsForDiags(*local, filepath.Dir(originalFileName), variables)
 
 		if diags != nil {
 			for _, diag := range diags {
@@ -269,7 +249,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 	for _, v := range cfg.ProviderConfigs {
 		providerType := v.Name
 
-		tfSchema := GetProviderSchemaForDiags(providerType, v.Config, filepath.Dir(originalFileNameDecoded), variables)
+		tfSchema := GetProviderSchemaForDiags(providerType, v.Config, filepath.Dir(originalFileName), variables)
 
 		if tfSchema != nil {
 			for _, diag := range tfSchema.Diags {
@@ -316,7 +296,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 			providerType = v.ProviderConfigRef.Name
 		}
 
-		tfSchema := GetResourceSchemaForDiags(resourceType, v.Config, filepath.Dir(originalFileNameDecoded), providerType, variables)
+		tfSchema := GetResourceSchemaForDiags(resourceType, v.Config, filepath.Dir(originalFileName), providerType, variables)
 
 		if tfSchema != nil {
 			for _, diag := range tfSchema.Diags {
@@ -362,7 +342,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 			providerType = v.ProviderConfigRef.Name
 		}
 
-		tfSchema := GetDataSourceSchemaForDiags(resourceType, v.Config, filepath.Dir(originalFileNameDecoded), providerType, variables)
+		tfSchema := GetDataSourceSchemaForDiags(resourceType, v.Config, filepath.Dir(originalFileName), providerType, variables)
 
 		if tfSchema != nil {
 			for _, diag := range tfSchema.Diags {
