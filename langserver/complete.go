@@ -25,7 +25,11 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 	//log.Println(tfstructs.Clients)
 	parser := configs.NewParser(memfs.MemFs)
 
-	fileURL := strings.Replace(string(vs.TextDocument.URI), "file://", "", 1)
+	uri, err := absolutePath(string(vs.TextDocument.URI))
+	if err != nil {
+		return lsp.CompletionList{}, err
+	}
+	fileURL := uri.Filename()
 
 	decodedFileURL, _ := url.QueryUnescape(fileURL)
 	fileDir := filepath.Dir(decodedFileURL)
