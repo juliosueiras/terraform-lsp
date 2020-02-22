@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform/configs"
 	"github.com/hashicorp/terraform/lang"
 	lsp "github.com/sourcegraph/go-lsp"
-	"net/url"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -25,16 +24,19 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 	//log.Println(tfstructs.Clients)
 	parser := configs.NewParser(memfs.MemFs)
 
-	fileURL := strings.Replace(string(vs.TextDocument.URI), "file://", "", 1)
+	uri, err := absolutePath(string(vs.TextDocument.URI))
+	if err != nil {
+		return lsp.CompletionList{}, err
+	}
+	fileURL := uri.Filename()
 
-	decodedFileURL, _ := url.QueryUnescape(fileURL)
-	fileDir := filepath.Dir(decodedFileURL)
+	fileDir := filepath.Dir(fileURL)
 	res, _ := filepath.Glob(fileDir + "/*.tf")
 	var file *configs.File
 	var resultFiles []*configs.File
 
 	for _, v := range res {
-		if strings.ToLower(decodedFileURL) == strings.ToLower(v) {
+		if strings.ToLower(fileURL) == strings.ToLower(v) {
 			continue
 		}
 

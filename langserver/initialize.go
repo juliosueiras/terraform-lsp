@@ -8,7 +8,22 @@ import (
 	"github.com/spf13/afero"
 )
 
-func Initialize(ctx context.Context, vs lsp.InitializeParams) (lsp.InitializeResult, error) {
+type DocumentLinkOptions struct {
+  ResolveProvider bool `json:"resolveProvider,omitempty"`
+}
+
+type ExtendedServerCapabilities struct {
+  TextDocumentSync *lsp.TextDocumentSyncOptionsOrKind `json:"textDocumentSync,omitempty"`
+  CompletionProvider *lsp.CompletionOptions `json:"completionProvider,omitempty"`
+  HoverProvider bool `json:"hoverProvider,omitempty"`
+  DocumentLinkProvider *DocumentLinkOptions `json:"documentLinkProvider,omitempty"`
+}
+
+type ExtendedInitializeResult struct {
+  Capabilities ExtendedServerCapabilities `json:"capabilities"`
+}
+
+func Initialize(ctx context.Context, vs lsp.InitializeParams) (ExtendedInitializeResult, error) {
 	file, err := afero.TempFile(memfs.MemFs, "", "tf-lsp-")
 	if err != nil {
 		log.Fatal(err)
@@ -16,8 +31,8 @@ func Initialize(ctx context.Context, vs lsp.InitializeParams) (lsp.InitializeRes
 	//defer os.Remove(file.Name())
 	tempFile = file
 
-	return lsp.InitializeResult{
-		Capabilities: lsp.ServerCapabilities{
+	return ExtendedInitializeResult{
+		Capabilities: ExtendedServerCapabilities{
 			TextDocumentSync: &lsp.TextDocumentSyncOptionsOrKind{
 				Options: &lsp.TextDocumentSyncOptions{
 					OpenClose: true,
@@ -29,6 +44,9 @@ func Initialize(ctx context.Context, vs lsp.InitializeParams) (lsp.InitializeRes
 				TriggerCharacters: []string{"."},
 			},
 			HoverProvider: false,
+			DocumentLinkProvider: &DocumentLinkOptions{
+				ResolveProvider:   false,
+			},
 		},
 	}, nil
 }

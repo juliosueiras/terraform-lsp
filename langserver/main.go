@@ -12,6 +12,7 @@ func CreateServer() *jrpc2.Server {
 		"textDocument/didChange":  handler.New(TextDocumentDidChange),
 		"textDocument/didOpen":    handler.New(TextDocumentDidOpen),
 		"textDocument/didClose":   handler.New(TextDocumentDidClose),
+		"textDocument/documentLink": handler.New(TextDocumentDocumentLink),
 		//"textDocument/hover":      handler.New(TextDocumentHover),
 		//"textDocument/references": handler.New(TextDocumentReferences),
 		//"textDocument/codeLens": handler.New(TextDocumentCodeLens),
