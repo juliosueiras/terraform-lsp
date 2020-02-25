@@ -3,7 +3,7 @@ module github.com/juliosueiras/terraform-lsp
 go 1.12
 
 require (
-	github.com/creachadair/jrpc2 v0.1.2
+	github.com/creachadair/jrpc2 v0.4.2
 	github.com/creack/pty v1.1.9 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-errors/errors v1.0.1 // indirect
@@ -29,7 +29,6 @@ require (
 	github.com/urfave/cli v1.22.2 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/zclconf/go-cty v1.2.1
-	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 )
 
 replace git.apache.org/thrift.git => github.com/apache/thrift v0.0.0-20180902110319-2566ecd5d999
