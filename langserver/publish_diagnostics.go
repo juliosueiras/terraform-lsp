@@ -6,7 +6,15 @@ import (
 	lsp "github.com/sourcegraph/go-lsp"
 )
 
-func TextDocumentPublishDiagnostics(server *jrpc2.Server, ctx context.Context, vs lsp.PublishDiagnosticsParams) error {
+func TextDocumentPublishDiagnostics(ctx context.Context, vs lsp.PublishDiagnosticsParams) error {
 
-	return server.Push(ctx, "textDocument/publishDiagnostics", vs)
+  var resultedError error
+
+  if isTCP {
+    resultedError = jrpc2.ServerPush(ctx, "textDocument/publishDiagnostics", vs)
+  } else {
+    resultedError = StdioServer.Push(ctx, "textDocument/publishDiagnostics", vs)
+  }
+
+	return resultedError
 }

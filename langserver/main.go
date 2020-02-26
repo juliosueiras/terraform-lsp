@@ -13,11 +13,12 @@ import (
 	"os"
 )
 
-func RunStdioServer() {
-	isTCP = false
+func RunStdioServer(oldLogInstance *oldLog.Logger) {
+  isTCP = false
 
 	StdioServer = jrpc2.NewServer(ServiceMap, &jrpc2.ServerOptions{
 		AllowPush: true,
+    Logger: oldLogInstance,
 	})
 
 	StdioServer.Start(channel.Header("")(os.Stdin, os.Stdout))
@@ -32,10 +33,10 @@ func RunStdioServer() {
 	log.Info("Server Finish")
 }
 
-func RunTCPServer(port int) {
-	isTCP = true
+func RunTCPServer(address string, port int, oldLogInstance *oldLog.Logger) {
+  isTCP = true
 
-	lst, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	lst, err := net.Listen("tcp", fmt.Sprintf("%s:%d", address, port))
 	if err != nil {
 		log.Fatalf("Listen: %v", err)
 	}
@@ -46,15 +47,13 @@ func RunTCPServer(port int) {
 
 	ctx, cancelFunc := context.WithCancel(ctx)
 
-  oldLogInstance := oldLog.New(os.Stdout, "", 0)
-
 	go func() {
 		if err := server.Loop(lst, ServiceMap, &server.LoopOptions{
 			Framing: newChan,
 			ServerOptions: &jrpc2.ServerOptions{
-				AllowPush: true,
+        AllowPush: true,
         Logger: oldLogInstance,
-			},
+      },
 		}); err != nil {
 			log.Errorf("Loop: unexpected failure: %v", err)
 			cancelFunc()
