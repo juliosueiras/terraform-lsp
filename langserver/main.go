@@ -8,6 +8,7 @@ import (
 	"github.com/creachadair/jrpc2/handler"
 	"github.com/creachadair/jrpc2/server"
 	log "github.com/sirupsen/logrus"
+  oldLog "log"
 	"net"
 	"os"
 )
@@ -75,11 +76,14 @@ func RunTCPServer(port int) {
 
 	ctx, cancelFunc := context.WithCancel(ctx)
 
+  oldLogInstance := oldLog.New(os.Stdout, "", 0)
+
 	go func() {
 		if err := server.Loop(lst, ServiceMap, &server.LoopOptions{
 			Framing: newChan,
 			ServerOptions: &jrpc2.ServerOptions{
 				AllowPush: true,
+        Logger: oldLogInstance,
 			},
 		}); err != nil {
 			log.Errorf("Loop: unexpected failure: %v", err)
