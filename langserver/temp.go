@@ -8,4 +8,6 @@ import (
 
 var tempFile afero.File
 var DiagsFiles = make(map[string][]lsp.Diagnostic)
-var Server *jrpc2.Server
+var StdioServer *jrpc2.Server
+var ServiceMap jrpc2.Assigner
+var isTCP bool

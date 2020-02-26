@@ -4,15 +4,16 @@ import (
 	"flag"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 	oldLog "log"
 	"os"
 	"strings"
 
-	"github.com/creachadair/jrpc2/channel"
 	"github.com/juliosueiras/terraform-lsp/langserver"
-	"io/ioutil"
 )
 
+var tcp = flag.Bool("tcp", false, "Use TCP instead of Stdio(which is default)")
+var port = flag.Int("port", 9900, "Port for TCP Server")
 var location = flag.String("log-location", "", "Location of the lsp log")
 var debug = flag.Bool("debug", false, "Enable debug output")
 var enableLogFile = flag.Bool("enable-log-file", false, "Enable log file")
@@ -34,8 +35,6 @@ func main() {
 		return
 	}
 
-	Server := langserver.CreateServer()
-
 	log.Infof("Log Level is Debug: %t", *debug)
 
 	if *debug {
@@ -53,14 +52,9 @@ func main() {
 		log.SetOutput(f)
 	}
 
-	// Start the server on a channel comprising stdin/stdout.
-	Server.Start(channel.Header("")(os.Stdin, os.Stdout))
-	log.Info("Server started")
-
-	// Wait for the server to exit, and report any errors.
-	if err := Server.Wait(); err != nil {
-		log.Printf("Server exited: %v", err)
+	if *tcp {
+		langserver.RunTCPServer(*port)
+	} else {
+		langserver.RunStdioServer()
 	}
-
-	log.Info("Server Finish")
 }

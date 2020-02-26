@@ -19,9 +19,11 @@ func TextDocumentDidChange(ctx context.Context, vs lsp.DidChangeTextDocumentPara
 
 	DiagsFiles[fileURL] = tfstructs.GetDiagnostics(tempFile.Name(), fileURL)
 
-	TextDocumentPublishDiagnostics(Server, ctx, lsp.PublishDiagnosticsParams{
-		URI:         vs.TextDocument.URI,
-		Diagnostics: DiagsFiles[fileURL],
-	})
+	if !isTCP {
+		TextDocumentPublishDiagnostics(StdioServer, ctx, lsp.PublishDiagnosticsParams{
+			URI:         vs.TextDocument.URI,
+			Diagnostics: DiagsFiles[fileURL],
+		})
+	}
 	return nil
 }
