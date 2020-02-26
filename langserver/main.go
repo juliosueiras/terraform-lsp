@@ -77,6 +77,7 @@ func RunTCPServer(port int) {
 func InitializeServiceMap() {
 	ServiceMap = handler.Map{
 		"initialize":                handler.New(Initialize),
+		"initialized":                handler.New(Initialized),
 		"textDocument/completion":   handler.New(TextDocumentComplete),
 		"textDocument/didChange":    handler.New(TextDocumentDidChange),
 		"textDocument/didOpen":      handler.New(TextDocumentDidOpen),
