@@ -16,20 +16,7 @@ import (
 func RunStdioServer() {
 	isTCP = false
 
-	StdioServer = jrpc2.NewServer(handler.Map{
-		"initialize":                handler.New(Initialize),
-		"textDocument/completion":   handler.New(TextDocumentComplete),
-		"textDocument/didChange":    handler.New(TextDocumentDidChange),
-		"textDocument/didOpen":      handler.New(TextDocumentDidOpen),
-		"textDocument/didClose":     handler.New(TextDocumentDidClose),
-		"textDocument/documentLink": handler.New(TextDocumentDocumentLink),
-		//"textDocument/hover":      handler.New(TextDocumentHover),
-		//"textDocument/references": handler.New(TextDocumentReferences),
-		//"textDocument/codeLens": handler.New(TextDocumentCodeLens),
-		"exit":            handler.New(Exit),
-		"shutdown":        handler.New(Shutdown),
-		"$/cancelRequest": handler.New(CancelRequest),
-	}, &jrpc2.ServerOptions{
+	StdioServer = jrpc2.NewServer(ServiceMap, &jrpc2.ServerOptions{
 		AllowPush: true,
 	})
 
@@ -47,23 +34,6 @@ func RunStdioServer() {
 
 func RunTCPServer(port int) {
 	isTCP = true
-
-	ServiceMap = handler.Map{
-		"initialize":                handler.New(Initialize),
-		"textDocument/completion":   handler.New(TextDocumentComplete),
-		"textDocument/didChange":    handler.New(TextDocumentDidChange),
-		"textDocument/didOpen":      handler.New(TextDocumentDidOpen),
-		"textDocument/didClose":     handler.New(TextDocumentDidClose),
-		"textDocument/documentLink": handler.New(TextDocumentDocumentLink),
-		//"textDocument/hover":      handler.New(TextDocumentHover),
-		//"textDocument/references": handler.New(TextDocumentReferences),
-		//"textDocument/codeLens": handler.New(TextDocumentCodeLens),
-		"exit":            handler.New(Exit),
-		"shutdown":        handler.New(Shutdown),
-		"$/cancelRequest": handler.New(CancelRequest),
-	}
-
-	// Start the server on a channel comprising stdin/stdout.
 
 	lst, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
@@ -101,5 +71,22 @@ func RunTCPServer(port int) {
 			log.Info(ctx.Err())
 			return
 		}
+	}
+}
+
+func InitializeServiceMap() {
+	ServiceMap = handler.Map{
+		"initialize":                handler.New(Initialize),
+		"textDocument/completion":   handler.New(TextDocumentComplete),
+		"textDocument/didChange":    handler.New(TextDocumentDidChange),
+		"textDocument/didOpen":      handler.New(TextDocumentDidOpen),
+		"textDocument/didClose":     handler.New(TextDocumentDidClose),
+		"textDocument/documentLink": handler.New(TextDocumentDocumentLink),
+		//"textDocument/hover":      handler.New(TextDocumentHover),
+		//"textDocument/references": handler.New(TextDocumentReferences),
+		//"textDocument/codeLens": handler.New(TextDocumentCodeLens),
+		"exit":            handler.New(Exit),
+		"shutdown":        handler.New(Shutdown),
+		"$/cancelRequest": handler.New(CancelRequest),
 	}
 }

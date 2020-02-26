@@ -52,6 +52,8 @@ func main() {
 		log.SetOutput(f)
 	}
 
+  langserver.InitializeServiceMap()
+
 	if *tcp {
 		langserver.RunTCPServer(*port)
 	} else {
