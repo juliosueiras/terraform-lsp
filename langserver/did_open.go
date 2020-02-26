@@ -15,10 +15,10 @@ func TextDocumentDidOpen(ctx context.Context, vs lsp.DidOpenTextDocumentParams) 
 
 	DiagsFiles[fileURL] = tfstructs.GetDiagnostics(fileURL, fileURL)
 
-	TextDocumentPublishDiagnostics(Server, ctx, lsp.PublishDiagnosticsParams{
-		URI:         vs.TextDocument.URI,
-		Diagnostics: DiagsFiles[fileURL],
-	})
+  TextDocumentPublishDiagnostics(ctx, lsp.PublishDiagnosticsParams{
+    URI:         vs.TextDocument.URI,
+    Diagnostics: DiagsFiles[fileURL],
+  })
 	tempFile.Write([]byte(vs.TextDocument.Text))
 	return nil
 }

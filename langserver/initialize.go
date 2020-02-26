@@ -9,18 +9,18 @@ import (
 )
 
 type DocumentLinkOptions struct {
-  ResolveProvider bool `json:"resolveProvider,omitempty"`
+	ResolveProvider bool `json:"resolveProvider,omitempty"`
 }
 
 type ExtendedServerCapabilities struct {
-  TextDocumentSync *lsp.TextDocumentSyncOptionsOrKind `json:"textDocumentSync,omitempty"`
-  CompletionProvider *lsp.CompletionOptions `json:"completionProvider,omitempty"`
-  HoverProvider bool `json:"hoverProvider,omitempty"`
-  DocumentLinkProvider *DocumentLinkOptions `json:"documentLinkProvider,omitempty"`
+	TextDocumentSync     *lsp.TextDocumentSyncOptionsOrKind `json:"textDocumentSync,omitempty"`
+	CompletionProvider   *lsp.CompletionOptions             `json:"completionProvider,omitempty"`
+	HoverProvider        bool                               `json:"hoverProvider,omitempty"`
+	DocumentLinkProvider *DocumentLinkOptions               `json:"documentLinkProvider,omitempty"`
 }
 
 type ExtendedInitializeResult struct {
-  Capabilities ExtendedServerCapabilities `json:"capabilities"`
+	Capabilities ExtendedServerCapabilities `json:"capabilities"`
 }
 
 func Initialize(ctx context.Context, vs lsp.InitializeParams) (ExtendedInitializeResult, error) {
@@ -45,7 +45,7 @@ func Initialize(ctx context.Context, vs lsp.InitializeParams) (ExtendedInitializ
 			},
 			HoverProvider: false,
 			DocumentLinkProvider: &DocumentLinkOptions{
-				ResolveProvider:   false,
+				ResolveProvider: false,
 			},
 		},
 	}, nil
