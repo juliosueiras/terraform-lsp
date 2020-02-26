@@ -2,6 +2,7 @@ package langserver
 
 import (
 	"context"
+  "fmt"
 	"github.com/creachadair/jrpc2"
 	"github.com/creachadair/jrpc2/channel"
 	"github.com/creachadair/jrpc2/handler"
@@ -63,7 +64,7 @@ func RunTCPServer(port int) {
 
 	// Start the server on a channel comprising stdin/stdout.
 
-	lst, err := net.Listen("tcp", "127.0.0.1:9900")
+	lst, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
 		log.Fatalf("Listen: %v", err)
 	}
