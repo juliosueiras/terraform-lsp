@@ -3,8 +3,10 @@ package tfstructs
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"go/build"
-	"log"
+	"io/ioutil"
+	oldLog "log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -79,6 +81,7 @@ func NewProvisionerClient(name string, targetDir string) (*Client, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Failed to initialize plugin: %s", err)
 		}
+
 		// create a new resource provisioner.
 		raw, err := rpcClient.Dispense(plugin.ProvisionerPluginName)
 		if err != nil {
@@ -102,25 +105,34 @@ func NewClient(providerName string, targetDir string) (*Client, error) {
 		return nil, err
 	}
 
+	clientName := fmt.Sprintf("%s_%s", pluginMeta.Name, pluginMeta.Version)
 	// initialize a plugin Client.
-	pluginClient := plugin.Client(*pluginMeta)
-	rpcClient, err := pluginClient.Client()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to initialize plugin: %s", err)
+	var finalClient *Client
+	if Clients[clientName] == nil {
+		pluginClient := plugin.Client(*pluginMeta)
+		rpcClient, err := pluginClient.Client()
+		if err != nil {
+			return nil, fmt.Errorf("Failed to initialize plugin: %s", err)
+		}
+
+		// create a new resource provider.
+		raw, err := rpcClient.Dispense(plugin.ProviderPluginName)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to dispense plugin: %s", err)
+		}
+
+		provider := raw.(*plugin.GRPCProvider)
+		finalClient = &Client{
+			provider:     provider,
+			pluginClient: pluginClient,
+		}
+
+		Clients[clientName] = finalClient
+	} else {
+		finalClient = Clients[clientName]
 	}
 
-	// create a new resource provider.
-	raw, err := rpcClient.Dispense(plugin.ProviderPluginName)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to dispense plugin: %s", err)
-	}
-
-	provider := raw.(*plugin.GRPCProvider)
-
-	return &Client{
-		provider:     provider,
-		pluginClient: pluginClient,
-	}, nil
+	return finalClient, nil
 }
 
 // findPlugin finds a plugin with the name specified in the arguments.
@@ -129,6 +141,8 @@ func findPlugin(pluginType string, pluginName string, targetDir string) (*discov
 	if err != nil {
 		return nil, err
 	}
+
+	oldLog.SetOutput(ioutil.Discard)
 
 	pluginMetaSet := discovery.FindPlugins(pluginType, dirs).WithName(pluginName)
 
@@ -171,13 +185,21 @@ func pluginDirs(targetDir string) ([]string, error) {
 	// auto installed directory
 	// This does not take into account overriding the data directory.
 	autoInstalledDir := ""
-	for dir := targetDir; dir != "" && strings.HasPrefix(dir, homeDir); dir = filepath.Dir(dir) {
-		log.Printf("[DEBUG] search .terraform dir in %s", dir)
+
+	searchLevel := 4
+
+	for dir := targetDir; dir != "" && searchLevel != 0; dir = filepath.Dir(dir) {
+
+		log.Debug("[DEBUG] search .terraform dir in %s", dir)
+
 		if _, err := os.Stat(filepath.Join(dir, ".terraform")); err == nil {
 			autoInstalledDir = filepath.Join(dir, ".terraform", "plugins", arch)
 			break
 		}
+
+		searchLevel -= 1
 	}
+
 	if autoInstalledDir != "" {
 		dirs = append(dirs, autoInstalledDir)
 	}
@@ -197,7 +219,7 @@ func pluginDirs(targetDir string) ([]string, error) {
 	gopath := build.Default.GOPATH
 	dirs = append(dirs, filepath.Join(gopath, "bin"))
 
-	log.Printf("[DEBUG] plugin dirs: %#v", dirs)
+	log.Debug("[DEBUG] plugin dirs: %#v", dirs)
 	return dirs, nil
 }
 

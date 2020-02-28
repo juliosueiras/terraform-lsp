@@ -2,28 +2,29 @@ package helper
 
 import (
 	"github.com/davecgh/go-spew/spew"
-	"github.com/hashicorp/hcl2/hcl"
-	"github.com/hashicorp/hcl2/hcl/hclsyntax"
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/terraform/configs"
 	"github.com/juliosueiras/terraform-lsp/hclstructs"
+	"github.com/juliosueiras/terraform-lsp/memfs"
+	log "github.com/sirupsen/logrus"
 	"github.com/sourcegraph/go-lsp"
+	"github.com/spf13/afero"
 	"github.com/zclconf/go-cty/cty"
-	"io/ioutil"
-	"log"
-	"os"
 	"reflect"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 )
 
-func CheckAndGetConfig(parser *configs.Parser, originalFile *os.File, line int, character int) (*configs.File, hcl.Diagnostics, int, *hclsyntax.Body, bool) {
-	fileText, _ := ioutil.ReadFile(originalFile.Name())
+func CheckAndGetConfig(parser *configs.Parser, originalFile afero.File, line int, character int) (*configs.File, hcl.Diagnostics, int, *hclsyntax.Body, bool) {
+	fileText, _ := afero.ReadFile(memfs.MemFs, originalFile.Name())
 	result := make([]byte, 1)
 	pos := FindOffset(string(fileText), line, character)
 
-	tempFile, _ := ioutil.TempFile("", "check_tf_lsp")
-	defer os.Remove(tempFile.Name())
+	tempFile, _ := afero.TempFile(memfs.MemFs, "", "check_tf_lsp")
+
+	defer memfs.MemFs.Remove(tempFile.Name())
 
 	originalFile.ReadAt(result, int64(pos))
 
@@ -64,6 +65,10 @@ func CheckAndGetConfig(parser *configs.Parser, originalFile *os.File, line int, 
 
 // credits: https://stackoverflow.com/questions/28008566/how-to-compute-the-offset-from-column-and-line-number-go
 func FindOffset(fileText string, line, column int) int {
+	if column == 0 {
+		column = 1
+	}
+
 	currentCol := 1
 	currentLine := 1
 
@@ -78,13 +83,16 @@ func FindOffset(fileText string, line, column int) int {
 		} else {
 			currentCol++
 		}
-
 	}
 	return -1
 }
 
 func DumpLog(res interface{}) {
-	log.Println(spew.Sdump(res))
+	result := spew.Sdump(res)
+	strSlice := strings.Split(result, "\n")
+	for _, s := range strSlice {
+		log.Debug(s)
+	}
 }
 
 func ParseVariables(vars hcl.Traversal, configVars map[string]*configs.Variable, completionItems []lsp.CompletionItem) []lsp.CompletionItem {

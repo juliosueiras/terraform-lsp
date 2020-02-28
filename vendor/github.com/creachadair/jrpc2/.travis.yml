@@ -1,0 +1,26 @@
+language: go
+
+go:
+  - 1.11.x
+  - 1.12.x
+
+cache:
+  # I cargo-culted these cache directory paths from
+  # https://restic.net/blog/2018-09-02/travis-build-cache.
+  directories:
+    - $HOME/.cache/go-build
+    - $HOME/gopath/pkg/mod
+
+env:
+  - GO111MODULE=on GOPROXY=https://proxy.golang.org
+
+before_script:
+  # Install the staticcheck tool. The nonsense with the temp directory
+  # is to work around differences between Go 1.11.x and subsequent versions.
+  - (cd "$(mktemp -d)" && go mod init temp && go get honnef.co/go/tools/cmd/staticcheck)
+
+script:
+  - go build ./...
+  - go test -race -cpu=2 ./...
+  - go vet ./...
+  - staticcheck ./...

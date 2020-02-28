@@ -1,13 +1,14 @@
 package tfstructs
 
 import (
-	"github.com/hashicorp/hcl2/hcl"
-	"github.com/hashicorp/hcl2/hcldec"
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hcldec"
 	"github.com/hashicorp/terraform/configs"
 	"github.com/hashicorp/terraform/lang"
 	"github.com/hashicorp/terraform/providers"
 	"github.com/hashicorp/terraform/provisioners"
 	"github.com/juliosueiras/terraform-lsp/helper"
+	"github.com/juliosueiras/terraform-lsp/memfs"
 	"github.com/zclconf/go-cty/cty"
 	"path/filepath"
 	"strings"
@@ -26,7 +27,7 @@ type TerraformProvisionerSchema struct {
 }
 
 func GetModuleVariables(moduleAddr string, config hcl.Body, targetDir string) (map[string]*configs.Variable, bool) {
-	parser := configs.NewParser(nil)
+	parser := configs.NewParser(memfs.MemFs)
 
 	t, _ := parser.LoadConfigDir(filepath.Join(targetDir, moduleAddr))
 	if t == nil || len(t.Variables) == 0 {
@@ -34,6 +35,26 @@ func GetModuleVariables(moduleAddr string, config hcl.Body, targetDir string) (m
 	}
 
 	return t.Variables, true
+}
+
+func GetLocalsForDiags(local configs.Local, targetDir string, variables map[string]cty.Value) hcl.Diagnostics {
+	scope := lang.Scope{}
+
+	//_, diags := scope.EvalExpr(local, cty.DynamicPseudoType)
+	_, diags := local.Expr.Value(
+		&hcl.EvalContext{
+			// Build Full Tree
+			Variables: variables,
+			Functions: scope.Functions(),
+		},
+	)
+	//res, _, diags := hcldec.PartialDecode(config, nil, &hcl.EvalContext{
+	//	// Build Full Tree
+	//	Variables: variables,
+	//	Functions: scope.Functions(),
+	//})
+
+	return diags
 }
 
 func GetResourceSchemaForDiags(resourceType string, config hcl.Body, targetDir string, overrideProvider string, variables map[string]cty.Value) *TerraformSchema {
@@ -312,7 +333,7 @@ func GetProviderSchema(providerType string, config hcl.Body, targetDir string) *
 }
 
 func GetAllConfigs(filePath string, tempFilePath string) *configs.Module {
-	parser := configs.NewParser(nil)
+	parser := configs.NewParser(memfs.MemFs)
 	fileURL := strings.Replace(filePath, "file://", "", 1)
 
 	fileDir := filepath.Dir(fileURL)

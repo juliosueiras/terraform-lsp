@@ -2,27 +2,77 @@ package tfstructs
 
 import (
 	"fmt"
+	v2 "github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/terraform/configs"
 	"github.com/zclconf/go-cty/cty"
+	"os"
+	//"github.com/juliosueiras/terraform-lsp/helper"
+	terragruntConfig "github.com/gruntwork-io/terragrunt/config"
+	terragruntOptions "github.com/gruntwork-io/terragrunt/options"
+	oldHCL2 "github.com/hashicorp/hcl2/hcl"
+	"github.com/juliosueiras/terraform-lsp/memfs"
 	//"github.com/juliosueiras/terraform-lsp/helper"
 	"github.com/sourcegraph/go-lsp"
-	"os"
+	"github.com/spf13/afero"
 	"path/filepath"
 )
 
 func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
-	parser := configs.NewParser(nil)
+
+	parser := configs.NewParser(memfs.MemFs)
 	result := make([]lsp.Diagnostic, 0)
 	originalFileName := originalFile
-	if _, err := os.Stat(fileName); os.IsNotExist(err) {
+
+	if exist, _ := afero.Exists(memfs.MemFs, fileName); !exist {
 		return result
 	}
 
-	if _, err := os.Stat(originalFile); os.IsNotExist(err) {
+	if exist, _ := afero.Exists(memfs.MemFs, originalFile); !exist {
 		originalFile = fileName
 	}
 
-	_, hclDiags := parser.LoadHCLFile(fileName)
+	var hclDiags v2.Diagnostics
+	isTFVars := (filepath.Ext(originalFile) == ".tfvars")
+	isTerragrunt := (filepath.Base(originalFile) == "terragrunt.hcl")
+
+	var diagName string
+
+	if isTFVars {
+		_, hclDiags = parser.LoadValuesFile(fileName)
+		diagName = "TFVars"
+	} else if isTerragrunt {
+		fileContent, _ := afero.ReadFile(memfs.MemFs, fileName)
+
+		_, terragruntDiags := terragruntConfig.ParseConfigString(string(fileContent), &terragruntOptions.TerragruntOptions{}, &terragruntConfig.IncludeConfig{}, originalFile)
+
+		if terragruntDiags == nil {
+			return result
+		}
+
+		for _, diag := range terragruntDiags.(oldHCL2.Diagnostics) {
+			result = append(result, lsp.Diagnostic{
+				Severity: lsp.DiagnosticSeverity(diag.Severity),
+				Message:  diag.Detail,
+				Range: lsp.Range{
+					Start: lsp.Position{
+						Line:      diag.Subject.Start.Line - 1,
+						Character: diag.Subject.Start.Column - 1,
+					},
+					End: lsp.Position{
+						Line:      diag.Subject.End.Line - 1,
+						Character: diag.Subject.End.Column - 1,
+					},
+				},
+				Source: "Terragrunt",
+			})
+		}
+
+		return result
+
+	} else {
+		_, hclDiags = parser.LoadHCLFile(fileName)
+		diagName = "HCL"
+	}
 
 	for _, diag := range hclDiags {
 		result = append(result, lsp.Diagnostic{
@@ -38,8 +88,12 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 					Character: diag.Subject.End.Column - 1,
 				},
 			},
-			Source: "HCL",
+			Source: diagName,
 		})
+	}
+
+	if isTFVars {
+		return result
 	}
 
 	cfg, tfDiags := parser.LoadConfigFile(fileName)
@@ -66,15 +120,32 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 		resourceTypes[v.Type][v.Name] = cty.DynamicVal
 	}
 
+	targetDir := filepath.Dir(originalFileName)
+
+	resultedDir := ""
+	searchLevel := 4
+	for dir := targetDir; dir != "" && searchLevel != 0; dir = filepath.Dir(dir) {
+		if _, err := os.Stat(filepath.Join(dir, ".terraform")); err == nil {
+			resultedDir = dir
+			break
+		}
+		searchLevel -= 1
+	}
+
 	variables := map[string]cty.Value{
 		"path": cty.ObjectVal(map[string]cty.Value{
-			"cwd":    cty.StringVal(""),
-			"module": cty.StringVal(""),
-			"root":   cty.StringVal(""),
+			"cwd":    cty.StringVal(filepath.Dir(originalFileName)),
+			"module": cty.StringVal(filepath.Dir(originalFileName)),
+			"root":   cty.StringVal(resultedDir),
 		}),
 		"var":    cty.DynamicVal, // Need to check for undefined vars
 		"module": cty.DynamicVal,
 		"local":  cty.DynamicVal,
+		"each":   cty.DynamicVal,
+		"count":  cty.DynamicVal,
+		"terraform": cty.ObjectVal(map[string]cty.Value{
+			"workspace": cty.StringVal(""),
+		}),
 	}
 
 	for k, v := range resourceTypes {
@@ -126,6 +197,31 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 			Source: "Terraform",
 		})
 	}
+
+	for _, local := range cfg.Locals {
+		diags := GetLocalsForDiags(*local, filepath.Dir(originalFileName), variables)
+
+		if diags != nil {
+			for _, diag := range diags {
+				result = append(result, lsp.Diagnostic{
+					Severity: lsp.DiagnosticSeverity(diag.Severity),
+					Message:  diag.Detail,
+					Range: lsp.Range{
+						Start: lsp.Position{
+							Line:      diag.Subject.Start.Line - 1,
+							Character: diag.Subject.Start.Column - 1,
+						},
+						End: lsp.Position{
+							Line:      diag.Subject.End.Line - 1,
+							Character: diag.Subject.End.Column - 1,
+						},
+					},
+					Source: "Terraform Schema",
+				})
+			}
+		}
+	}
+
 	//	cfg, diags := configload.NewLoader(&configload.Config{
 	//		ModulesDir: ".terraform/modules",
 	//	})
@@ -153,7 +249,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 	for _, v := range cfg.ProviderConfigs {
 		providerType := v.Name
 
-		tfSchema := GetProviderSchemaForDiags(providerType, v.Config, filepath.Dir(originalFile), variables)
+		tfSchema := GetProviderSchemaForDiags(providerType, v.Config, filepath.Dir(originalFileName), variables)
 
 		if tfSchema != nil {
 			for _, diag := range tfSchema.Diags {
@@ -200,7 +296,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 			providerType = v.ProviderConfigRef.Name
 		}
 
-		tfSchema := GetResourceSchemaForDiags(resourceType, v.Config, filepath.Dir(originalFile), providerType, variables)
+		tfSchema := GetResourceSchemaForDiags(resourceType, v.Config, filepath.Dir(originalFileName), providerType, variables)
 
 		if tfSchema != nil {
 			for _, diag := range tfSchema.Diags {
@@ -246,7 +342,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 			providerType = v.ProviderConfigRef.Name
 		}
 
-		tfSchema := GetDataSourceSchemaForDiags(resourceType, v.Config, filepath.Dir(originalFile), providerType, variables)
+		tfSchema := GetDataSourceSchemaForDiags(resourceType, v.Config, filepath.Dir(originalFileName), providerType, variables)
 
 		if tfSchema != nil {
 			for _, diag := range tfSchema.Diags {
