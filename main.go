@@ -59,25 +59,25 @@ func main() {
 		log.SetOutput(f)
 	}
 
-  var oldLogInstance *oldLog.Logger
+	var oldLogInstance *oldLog.Logger
 
-  if *debugJRPC2 {
-    if !*tcp && !*enableLogFileJRPC2 {
-      log.Fatal("Debug for JRPC2 has to be set for log file location if is set to use stdio")
-    }
+	if *debugJRPC2 {
+		if !*tcp && !*enableLogFileJRPC2 {
+			log.Fatal("Debug for JRPC2 has to be set for log file location if is set to use stdio")
+		}
 
-    oldLogInstance = oldLog.New(os.Stdout, "", 0)
-    if *enableLogFileJRPC2 {
-      f, err := os.OpenFile(fmt.Sprintf("%stf-lsp-jrpc2.log", *locationJRPC2), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-      if err != nil {
-        log.Fatalf("error opening file: %v", err)
-      }
-      defer f.Close()
-      oldLogInstance.SetOutput(f)
-    }
+		oldLogInstance = oldLog.New(os.Stdout, "", 0)
+		if *enableLogFileJRPC2 {
+			f, err := os.OpenFile(fmt.Sprintf("%stf-lsp-jrpc2.log", *locationJRPC2), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+			if err != nil {
+				log.Fatalf("error opening file: %v", err)
+			}
+			defer f.Close()
+			oldLogInstance.SetOutput(f)
+		}
 	}
 
-  langserver.InitializeServiceMap()
+	langserver.InitializeServiceMap()
 
 	if *tcp {
 		langserver.RunTCPServer(*address, *port, oldLogInstance)
