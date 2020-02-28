@@ -8,7 +8,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-language-server/uri v0.2.0
-	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/gruntwork-io/terragrunt v0.21.13
 	github.com/hashicorp/go-hclog v0.9.0 // indirect
 	github.com/hashicorp/go-plugin v1.0.1-0.20190610192547-a1bc61569a26
@@ -25,6 +24,8 @@ require (
 	github.com/sirupsen/logrus v1.2.0
 	github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1
 	github.com/spf13/afero v1.2.2
+	github.com/spf13/pflag v1.0.3
+	github.com/spf13/viper v1.6.2
 	github.com/ulikunitz/xz v0.5.6 // indirect
 	github.com/urfave/cli v1.22.2 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
