@@ -2,23 +2,23 @@ package langserver
 
 import (
 	"context"
-  "fmt"
+	"fmt"
 	"github.com/creachadair/jrpc2"
 	"github.com/creachadair/jrpc2/channel"
 	"github.com/creachadair/jrpc2/handler"
 	"github.com/creachadair/jrpc2/server"
 	log "github.com/sirupsen/logrus"
-  oldLog "log"
+	oldLog "log"
 	"net"
 	"os"
 )
 
 func RunStdioServer(oldLogInstance *oldLog.Logger) {
-  isTCP = false
+	isTCP = false
 
 	StdioServer = jrpc2.NewServer(ServiceMap, &jrpc2.ServerOptions{
 		AllowPush: true,
-    Logger: oldLogInstance,
+		Logger:    oldLogInstance,
 	})
 
 	StdioServer.Start(channel.Header("")(os.Stdin, os.Stdout))
@@ -34,7 +34,7 @@ func RunStdioServer(oldLogInstance *oldLog.Logger) {
 }
 
 func RunTCPServer(address string, port int, oldLogInstance *oldLog.Logger) {
-  isTCP = true
+	isTCP = true
 
 	lst, err := net.Listen("tcp", fmt.Sprintf("%s:%d", address, port))
 	if err != nil {
@@ -51,9 +51,9 @@ func RunTCPServer(address string, port int, oldLogInstance *oldLog.Logger) {
 		if err := server.Loop(lst, ServiceMap, &server.LoopOptions{
 			Framing: newChan,
 			ServerOptions: &jrpc2.ServerOptions{
-        AllowPush: true,
-        Logger: oldLogInstance,
-      },
+				AllowPush: true,
+				Logger:    oldLogInstance,
+			},
 		}); err != nil {
 			log.Errorf("Loop: unexpected failure: %v", err)
 			cancelFunc()
@@ -76,7 +76,7 @@ func RunTCPServer(address string, port int, oldLogInstance *oldLog.Logger) {
 func InitializeServiceMap() {
 	ServiceMap = handler.Map{
 		"initialize":                handler.New(Initialize),
-		"initialized":                handler.New(Initialized),
+		"initialized":               handler.New(Initialized),
 		"textDocument/completion":   handler.New(TextDocumentComplete),
 		"textDocument/didChange":    handler.New(TextDocumentDidChange),
 		"textDocument/didOpen":      handler.New(TextDocumentDidOpen),

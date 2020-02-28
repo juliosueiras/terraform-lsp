@@ -6,14 +6,14 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/terraform/addrs"
 	"github.com/hashicorp/terraform/configs"
-	"github.com/juliosueiras/terraform-lsp/hclstructs"
-	"github.com/zclconf/go-cty/cty"
-	"github.com/juliosueiras/terraform-lsp/helper"
 	"github.com/hashicorp/terraform/lang"
+	"github.com/juliosueiras/terraform-lsp/hclstructs"
+	"github.com/juliosueiras/terraform-lsp/helper"
 	"github.com/sourcegraph/go-lsp"
+	"github.com/zclconf/go-cty/cty"
+	"os"
+	"path/filepath"
 	"reflect"
-  "path/filepath"
-  "os"
 )
 
 type GetVarAttributeRequest struct {
@@ -27,36 +27,35 @@ type GetVarAttributeRequest struct {
 func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionItem {
 	scope := lang.Scope{}
 
-  targetDir := request.FileDir
+	targetDir := request.FileDir
 
-  resultedDir := ""
+	resultedDir := ""
 	searchLevel := 4
 	for dir := targetDir; dir != "" && searchLevel != 0; dir = filepath.Dir(dir) {
 		if _, err := os.Stat(filepath.Join(dir, ".terraform")); err == nil {
-      resultedDir = dir
+			resultedDir = dir
 			break
 		}
 		searchLevel -= 1
 	}
 
-  helper.DumpLog(targetDir)
+	helper.DumpLog(targetDir)
 
-  variables := map[string]cty.Value{
-    "path": cty.ObjectVal(map[string]cty.Value{
-      "cwd":    cty.StringVal(request.FileDir),
-      "module": cty.StringVal(request.FileDir),
-      "root": cty.StringVal(resultedDir),
-    }),
-    "var":    cty.DynamicVal, // Need to check for undefined vars
-    "module": cty.DynamicVal,
-    "local":  cty.DynamicVal,
-    "each":   cty.DynamicVal,
-    "count":  cty.DynamicVal,
-    "terraform": cty.ObjectVal(map[string]cty.Value{
-      "workspace": cty.StringVal(""),
-    }),
-  }
-
+	variables := map[string]cty.Value{
+		"path": cty.ObjectVal(map[string]cty.Value{
+			"cwd":    cty.StringVal(request.FileDir),
+			"module": cty.StringVal(request.FileDir),
+			"root":   cty.StringVal(resultedDir),
+		}),
+		"var":    cty.DynamicVal, // Need to check for undefined vars
+		"module": cty.DynamicVal,
+		"local":  cty.DynamicVal,
+		"each":   cty.DynamicVal,
+		"count":  cty.DynamicVal,
+		"terraform": cty.ObjectVal(map[string]cty.Value{
+			"workspace": cty.StringVal(""),
+		}),
+	}
 
 	if request.Variables.RootName() == "var" {
 		vars := request.Variables
@@ -72,18 +71,17 @@ func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionI
 				}
 			}
 
+			testVal, _ := found.Expr.Value(
+				&hcl.EvalContext{
+					// Build Full Tree
+					Variables: variables,
+					Functions: scope.Functions(),
+				},
+			)
 
-      testVal, _ := found.Expr.Value(
-        &hcl.EvalContext{
-          // Build Full Tree
-          Variables: variables,
-          Functions: scope.Functions(),
-        },
-      )
+			helper.DumpLog(testVal)
 
-      helper.DumpLog(testVal)
-
-      origType := reflect.TypeOf(found.Expr)
+			origType := reflect.TypeOf(found.Expr)
 
 			if origType == hclstructs.ObjectConsExpr() {
 				items := found.Expr.(*hclsyntax.ObjectConsExpr).Items
@@ -109,9 +107,9 @@ func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionI
 				}
 			}
 
-      helper.DumpLog(request.Variables[2:])
-      helper.DumpLog(testVal.Type())
-      request.Result =  append(request.Result, helper.ParseOtherAttr(request.Variables[2:], testVal.Type(), request.Result)...)
+			helper.DumpLog(request.Variables[2:])
+			helper.DumpLog(testVal.Type())
+			request.Result = append(request.Result, helper.ParseOtherAttr(request.Variables[2:], testVal.Type(), request.Result)...)
 
 			return request.Result
 

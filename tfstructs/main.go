@@ -40,14 +40,14 @@ func GetModuleVariables(moduleAddr string, config hcl.Body, targetDir string) (m
 func GetLocalsForDiags(local configs.Local, targetDir string, variables map[string]cty.Value) hcl.Diagnostics {
 	scope := lang.Scope{}
 
-  //_, diags := scope.EvalExpr(local, cty.DynamicPseudoType)
-  _, diags := local.Expr.Value(
-    &hcl.EvalContext{
-      // Build Full Tree
-      Variables: variables,
-      Functions: scope.Functions(),
-    },
-  )
+	//_, diags := scope.EvalExpr(local, cty.DynamicPseudoType)
+	_, diags := local.Expr.Value(
+		&hcl.EvalContext{
+			// Build Full Tree
+			Variables: variables,
+			Functions: scope.Functions(),
+		},
+	)
 	//res, _, diags := hcldec.PartialDecode(config, nil, &hcl.EvalContext{
 	//	// Build Full Tree
 	//	Variables: variables,

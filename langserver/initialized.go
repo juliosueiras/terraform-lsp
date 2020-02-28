@@ -4,8 +4,8 @@ import (
 	"context"
 )
 
-type InitializedParams struct {}
+type InitializedParams struct{}
 
 func Initialized(ctx context.Context, vs InitializedParams) error {
-  return nil
+	return nil
 }

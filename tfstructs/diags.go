@@ -2,10 +2,10 @@ package tfstructs
 
 import (
 	"fmt"
-  "os"
 	v2 "github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/terraform/configs"
 	"github.com/zclconf/go-cty/cty"
+	"os"
 	//"github.com/juliosueiras/terraform-lsp/helper"
 	terragruntConfig "github.com/gruntwork-io/terragrunt/config"
 	terragruntOptions "github.com/gruntwork-io/terragrunt/options"
@@ -120,13 +120,13 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 		resourceTypes[v.Type][v.Name] = cty.DynamicVal
 	}
 
-  targetDir := filepath.Dir(originalFileName)
+	targetDir := filepath.Dir(originalFileName)
 
-  resultedDir := ""
+	resultedDir := ""
 	searchLevel := 4
 	for dir := targetDir; dir != "" && searchLevel != 0; dir = filepath.Dir(dir) {
 		if _, err := os.Stat(filepath.Join(dir, ".terraform")); err == nil {
-      resultedDir = dir
+			resultedDir = dir
 			break
 		}
 		searchLevel -= 1
@@ -136,7 +136,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 		"path": cty.ObjectVal(map[string]cty.Value{
 			"cwd":    cty.StringVal(filepath.Dir(originalFileName)),
 			"module": cty.StringVal(filepath.Dir(originalFileName)),
-			"root": cty.StringVal(resultedDir),
+			"root":   cty.StringVal(resultedDir),
 		}),
 		"var":    cty.DynamicVal, // Need to check for undefined vars
 		"module": cty.DynamicVal,
@@ -198,7 +198,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 		})
 	}
 
-  for _, local := range cfg.Locals {
+	for _, local := range cfg.Locals {
 		diags := GetLocalsForDiags(*local, filepath.Dir(originalFileName), variables)
 
 		if diags != nil {
@@ -220,7 +220,7 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 				})
 			}
 		}
-  }
+	}
 
 	//	cfg, diags := configload.NewLoader(&configload.Config{
 	//		ModulesDir: ".terraform/modules",
