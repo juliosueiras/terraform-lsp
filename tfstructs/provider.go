@@ -190,7 +190,7 @@ func pluginDirs(targetDir string) ([]string, error) {
 
 	for dir := targetDir; dir != "" && searchLevel != 0; dir = filepath.Dir(dir) {
 
-		log.Debug("[DEBUG] search .terraform dir in %s", dir)
+		log.Debugf("[DEBUG] search .terraform dir in %s", dir)
 
 		if _, err := os.Stat(filepath.Join(dir, ".terraform")); err == nil {
 			autoInstalledDir = filepath.Join(dir, ".terraform", "plugins", arch)
@@ -219,7 +219,7 @@ func pluginDirs(targetDir string) ([]string, error) {
 	gopath := build.Default.GOPATH
 	dirs = append(dirs, filepath.Join(gopath, "bin"))
 
-	log.Debug("[DEBUG] plugin dirs: %#v", dirs)
+	log.Debugf("[DEBUG] plugin dirs: %#v", dirs)
 	return dirs, nil
 }
 
