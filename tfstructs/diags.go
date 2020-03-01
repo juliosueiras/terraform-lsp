@@ -2,19 +2,22 @@ package tfstructs
 
 import (
 	"fmt"
-	v2 "github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/terraform/configs"
-	"github.com/zclconf/go-cty/cty"
 	"os"
-	//"github.com/juliosueiras/terraform-lsp/helper"
+	"path/filepath"
+
+	"github.com/juliosueiras/terraform-lsp/memfs"
+	// "github.com/juliosueiras/terraform-lsp/helper"
+
+	v2 "github.com/hashicorp/hcl/v2"
+	oldHCL2 "github.com/hashicorp/hcl2/hcl"
+	"github.com/hashicorp/terraform/configs"
+
 	terragruntConfig "github.com/gruntwork-io/terragrunt/config"
 	terragruntOptions "github.com/gruntwork-io/terragrunt/options"
-	oldHCL2 "github.com/hashicorp/hcl2/hcl"
-	"github.com/juliosueiras/terraform-lsp/memfs"
-	//"github.com/juliosueiras/terraform-lsp/helper"
+
 	"github.com/sourcegraph/go-lsp"
 	"github.com/spf13/afero"
-	"path/filepath"
+	"github.com/zclconf/go-cty/cty"
 )
 
 func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
@@ -53,17 +56,8 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 			result = append(result, lsp.Diagnostic{
 				Severity: lsp.DiagnosticSeverity(diag.Severity),
 				Message:  diag.Detail,
-				Range: lsp.Range{
-					Start: lsp.Position{
-						Line:      diag.Subject.Start.Line - 1,
-						Character: diag.Subject.Start.Column - 1,
-					},
-					End: lsp.Position{
-						Line:      diag.Subject.End.Line - 1,
-						Character: diag.Subject.End.Column - 1,
-					},
-				},
-				Source: "Terragrunt",
+				Range:    rangeOf(castToV2Range(*diag.Subject)),
+				Source:   "Terragrunt",
 			})
 		}
 
@@ -78,17 +72,8 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 		result = append(result, lsp.Diagnostic{
 			Severity: lsp.DiagnosticSeverity(diag.Severity),
 			Message:  diag.Detail,
-			Range: lsp.Range{
-				Start: lsp.Position{
-					Line:      diag.Subject.Start.Line - 1,
-					Character: diag.Subject.Start.Column - 1,
-				},
-				End: lsp.Position{
-					Line:      diag.Subject.End.Line - 1,
-					Character: diag.Subject.End.Column - 1,
-				},
-			},
-			Source: diagName,
+			Range:    rangeOf(*diag.Subject),
+			Source:   diagName,
 		})
 	}
 
@@ -184,17 +169,8 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 		result = append(result, lsp.Diagnostic{
 			Severity: lsp.DiagnosticSeverity(diag.Severity),
 			Message:  diag.Detail,
-			Range: lsp.Range{
-				Start: lsp.Position{
-					Line:      diag.Subject.Start.Line - 1,
-					Character: diag.Subject.Start.Column - 1,
-				},
-				End: lsp.Position{
-					Line:      diag.Subject.End.Line - 1,
-					Character: diag.Subject.End.Column - 1,
-				},
-			},
-			Source: "Terraform",
+			Range:    rangeOf(*diag.Subject),
+			Source:   "Terraform",
 		})
 	}
 
@@ -206,17 +182,8 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 				result = append(result, lsp.Diagnostic{
 					Severity: lsp.DiagnosticSeverity(diag.Severity),
 					Message:  diag.Detail,
-					Range: lsp.Range{
-						Start: lsp.Position{
-							Line:      diag.Subject.Start.Line - 1,
-							Character: diag.Subject.Start.Column - 1,
-						},
-						End: lsp.Position{
-							Line:      diag.Subject.End.Line - 1,
-							Character: diag.Subject.End.Column - 1,
-						},
-					},
-					Source: "Terraform Schema",
+					Range:    rangeOf(*diag.Subject),
+					Source:   "Terraform Schema",
 				})
 			}
 		}
@@ -256,34 +223,16 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 				result = append(result, lsp.Diagnostic{
 					Severity: lsp.DiagnosticSeverity(diag.Severity),
 					Message:  diag.Detail,
-					Range: lsp.Range{
-						Start: lsp.Position{
-							Line:      diag.Subject.Start.Line - 1,
-							Character: diag.Subject.Start.Column - 1,
-						},
-						End: lsp.Position{
-							Line:      diag.Subject.End.Line - 1,
-							Character: diag.Subject.End.Column - 1,
-						},
-					},
-					Source: "Terraform Schema",
+					Range:    rangeOf(*diag.Subject),
+					Source:   "Terraform Schema",
 				})
 			}
 		} else {
 			result = append(result, lsp.Diagnostic{
 				Severity: lsp.DiagnosticSeverity(lsp.Error),
 				Message:  fmt.Sprintf("Provider %s does not exist", v.Name),
-				Range: lsp.Range{
-					Start: lsp.Position{
-						Line:      v.NameRange.Start.Line - 1,
-						Character: v.NameRange.Start.Column - 1,
-					},
-					End: lsp.Position{
-						Line:      v.NameRange.End.Line - 1,
-						Character: v.NameRange.End.Column - 1,
-					},
-				},
-				Source: "Terraform Schema",
+				Range:    rangeOf(v.NameRange),
+				Source:   "Terraform Schema",
 			})
 		}
 	}
@@ -303,34 +252,16 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 				result = append(result, lsp.Diagnostic{
 					Severity: lsp.DiagnosticSeverity(diag.Severity),
 					Message:  diag.Detail,
-					Range: lsp.Range{
-						Start: lsp.Position{
-							Line:      diag.Subject.Start.Line - 1,
-							Character: diag.Subject.Start.Column - 1,
-						},
-						End: lsp.Position{
-							Line:      diag.Subject.End.Line - 1,
-							Character: diag.Subject.End.Column - 1,
-						},
-					},
-					Source: "Terraform Schema",
+					Range:    rangeOf(*diag.Subject),
+					Source:   "Terraform Schema",
 				})
 			}
 		} else {
 			result = append(result, lsp.Diagnostic{
 				Severity: lsp.DiagnosticSeverity(lsp.Error),
 				Message:  fmt.Sprintf("Resource %s does not exist", v.Type),
-				Range: lsp.Range{
-					Start: lsp.Position{
-						Line:      v.TypeRange.Start.Line - 1,
-						Character: v.TypeRange.Start.Column - 1,
-					},
-					End: lsp.Position{
-						Line:      v.TypeRange.End.Line - 1,
-						Character: v.TypeRange.End.Column - 1,
-					},
-				},
-				Source: "Terraform Schema",
+				Range:    rangeOf(v.TypeRange),
+				Source:   "Terraform Schema",
 			})
 		}
 	}
@@ -349,39 +280,50 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 				result = append(result, lsp.Diagnostic{
 					Severity: lsp.DiagnosticSeverity(diag.Severity),
 					Message:  diag.Detail,
-					Range: lsp.Range{
-						Start: lsp.Position{
-							Line:      diag.Subject.Start.Line - 1,
-							Character: diag.Subject.Start.Column - 1,
-						},
-						End: lsp.Position{
-							Line:      diag.Subject.End.Line - 1,
-							Character: diag.Subject.End.Column - 1,
-						},
-					},
-					Source: "Terraform",
+					Range:    rangeOf(*diag.Subject),
+					Source:   "Terraform",
 				})
 			}
 		} else {
 			result = append(result, lsp.Diagnostic{
 				Severity: lsp.DiagnosticSeverity(lsp.Error),
 				Message:  fmt.Sprintf("Data source %s does not exist", v.Type),
-				Range: lsp.Range{
-					Start: lsp.Position{
-						Line:      v.TypeRange.Start.Line - 1,
-						Character: v.TypeRange.Start.Column - 1,
-					},
-					End: lsp.Position{
-						Line:      v.TypeRange.End.Line - 1,
-						Character: v.TypeRange.End.Column - 1,
-					},
-				},
-				Source: "Terraform",
+				Range:    rangeOf(v.TypeRange),
+				Source:   "Terraform",
 			})
 		}
 	}
-	//
-	//	//spew.Dump(file.ManagedResources[0].Config.Content(nil))
+	// spew.Dump(file.ManagedResources[0].Config.Content(nil))
 
 	return result
+}
+
+func castToV2Range(r oldHCL2.Range) v2.Range {
+	return v2.Range{
+		Filename: r.Filename,
+		Start:    castToV2Pos(r.Start),
+		End:      castToV2Pos(r.End),
+	}
+}
+
+func castToV2Pos(pos oldHCL2.Pos) v2.Pos {
+	return v2.Pos{
+		Line:   pos.Line,
+		Column: pos.Column,
+		Byte:   pos.Byte,
+	}
+}
+
+func rangeOf(r v2.Range) lsp.Range {
+	return lsp.Range{
+		Start: positionOf(r.Start),
+		End:   positionOf(r.End),
+	}
+}
+
+func positionOf(pos v2.Pos) lsp.Position {
+	return lsp.Position{
+		Line:      pos.Line - 1,
+		Character: pos.Column - 1,
+	}
 }
