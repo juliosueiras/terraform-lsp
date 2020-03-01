@@ -174,20 +174,8 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 		})
 	}
 
-	for _, local := range cfg.Locals {
-		diags := GetLocalsForDiags(*local, filepath.Dir(originalFileName), variables)
-
-		if diags != nil {
-			for _, diag := range diags {
-				result = append(result, lsp.Diagnostic{
-					Severity: lsp.DiagnosticSeverity(diag.Severity),
-					Message:  diag.Detail,
-					Range:    rangeOf(*diag.Subject),
-					Source:   "Terraform Schema",
-				})
-			}
-		}
-	}
+	diags := localDiags(cfg.Locals, originalFileName, variables)
+	result = append(result, diags...)
 
 	//	cfg, diags := configload.NewLoader(&configload.Config{
 	//		ModulesDir: ".terraform/modules",
@@ -213,7 +201,46 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 	//	helper.DumpLog(diags3)
 	//	helper.DumpLog(result2)
 	//	helper.DumpLog(config)
-	for _, v := range cfg.ProviderConfigs {
+
+	schemata := providerSchema(cfg.ProviderConfigs, originalFileName, variables)
+	result = append(result, schemata...)
+
+	schemata = resourceSchema(cfg.ManagedResources, originalFileName, variables)
+	result = append(result, schemata...)
+
+	schemata = dataSourceSchema(cfg.DataResources, originalFileName, variables)
+	result = append(result, schemata...)
+
+	// spew.Dump(file.ManagedResources[0].Config.Content(nil))
+
+	return result
+}
+
+func localDiags(locals []*configs.Local, originalFileName string, variables map[string]cty.Value) []lsp.Diagnostic {
+	result := make([]lsp.Diagnostic, 0)
+
+	for _, local := range locals {
+		diags := GetLocalsForDiags(*local, filepath.Dir(originalFileName), variables)
+
+		if diags != nil {
+			for _, diag := range diags {
+				result = append(result, lsp.Diagnostic{
+					Severity: lsp.DiagnosticSeverity(diag.Severity),
+					Message:  diag.Detail,
+					Range:    rangeOf(*diag.Subject),
+					Source:   "Terraform Schema",
+				})
+			}
+		}
+	}
+
+	return result
+}
+
+func providerSchema(providers []*configs.Provider, originalFileName string, variables map[string]cty.Value) []lsp.Diagnostic {
+	result := make([]lsp.Diagnostic, 0)
+
+	for _, v := range providers {
 		providerType := v.Name
 
 		tfSchema := GetProviderSchemaForDiags(providerType, v.Config, filepath.Dir(originalFileName), variables)
@@ -237,7 +264,14 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 		}
 	}
 
-	for _, v := range cfg.ManagedResources {
+	return result
+}
+
+func resourceSchema(resources []*configs.Resource, originalFileName string, variables map[string]cty.Value) []lsp.Diagnostic {
+
+	result := make([]lsp.Diagnostic, 0)
+
+	for _, v := range resources {
 		resourceType := v.Type
 
 		var providerType string
@@ -266,7 +300,14 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 		}
 	}
 
-	for _, v := range cfg.DataResources {
+	return result
+}
+
+func dataSourceSchema(resources []*configs.Resource, originalFileName string, variables map[string]cty.Value) []lsp.Diagnostic {
+
+	result := make([]lsp.Diagnostic, 0)
+
+	for _, v := range resources {
 		resourceType := v.Type
 		var providerType string
 		if v.ProviderConfigRef != nil {
@@ -293,7 +334,6 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 			})
 		}
 	}
-	// spew.Dump(file.ManagedResources[0].Config.Content(nil))
 
 	return result
 }
