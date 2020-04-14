@@ -39,7 +39,6 @@ func init() {
 }
 
 func main() {
-
 	oldLog.SetOutput(ioutil.Discard)
 	oldLog.SetFlags(0)
 
@@ -51,6 +50,11 @@ func main() {
 
 	debug := viper.GetBool("debug")
 	log.Infof("Log Level is Debug: %t", debug)
+	log.SetFormatter(&log.TextFormatter{
+		DisableTimestamp:       true,
+		ForceColors:            true,
+		DisableLevelTruncation: true,
+	})
 
 	if debug {
 		log.SetLevel(log.DebugLevel)

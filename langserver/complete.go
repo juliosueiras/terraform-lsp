@@ -74,19 +74,16 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 	}
 
 	if r, found, _ := tfstructs.GetTypeCompletion(result, fileDir, hclFile, posHCL, extraProvider); found {
-		helper.DumpLog("Found Type Completion")
 		return r, nil
 	}
 
 	config, origConfig, configType := tfstructs.GetConfig(file, posHCL)
 
 	if diags != nil || config == nil {
-		helper.DumpLog("With Error or No Config")
-		helper.DumpLog(diags)
 
 		return lsp.CompletionList{
 			IsIncomplete: false,
-			Items:        tfstructs.GetTopLevelCompletion(),
+			Items:        tfstructs.GetTopLevelCompletionWithPos(posHCL),
 		}, nil
 	}
 
@@ -139,10 +136,17 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 							params = append(params, x.Name)
 						}
 
+						var resultParams []string
+						for index, param := range params {
+							resultParams = append(resultParams, fmt.Sprintf("${%d:%s}", index+1, param))
+						}
+
 						result = append(result, lsp.CompletionItem{
-							Label:      fmt.Sprintf("%s(%s)", k, strings.Join(params, ",")),
-							InsertText: k,
-							Detail:     " function",
+							Label:            fmt.Sprintf("%s(%s)", k, strings.Join(params, ",")),
+							Kind:             lsp.CIKField,
+							InsertTextFormat: lsp.ITFSnippet,
+							InsertText:       fmt.Sprintf("%s(%s)", k, strings.Join(resultParams, ",")),
+							Detail:           " function",
 						})
 
 					}
@@ -173,7 +177,6 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 			}
 		}
 
-		//hclsyntax.LiteralValueExpr
 		if r, found, _ := tfstructs.GetAttributeCompletion(result, configType, origConfig, fileDir); found {
 			return r, nil
 		}
@@ -184,7 +187,6 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 	if blocks != nil && attr == nil {
 		//helper.DumpLog(blocks)
 		if blocks[0].Type == "provisioner" {
-			helper.DumpLog(blocks)
 			if len(blocks) == 1 {
 
 				if r, found, _ := tfstructs.GetAttributeCompletion(result, "provisioner", blocks[0], fileDir); found {
@@ -220,10 +222,11 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 		}
 	}
 
+	if expr == nil {
+		expr = attr.Expr
+	}
+
 	if expr != nil {
-		helper.DumpLog("Found Expression")
-		helper.DumpLog(posHCL)
-		helper.DumpLog(expr)
 		//.*for.*in\s+([^:]*)
 		//te, te2 := hclsyntax.ParseExpression([]byte("aws[0].test"), "test", hcl.Pos{
 		//	Line:   0,
@@ -241,7 +244,6 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 				searchResult := re.FindSubmatch([]byte(textLines[vs.Position.Line]))
 
 				if searchResult != nil {
-					helper.DumpLog(searchResult[1])
 					dynamicExpr, _ := hclsyntax.ParseExpression([]byte(searchResult[1]), "test", hcl.Pos{
 						Line:   0,
 						Column: 0,
@@ -266,9 +268,7 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 		//reflect.New(origType)
 		if origType == hclstructs.ForExpr() {
 			expr := expr.(*hclsyntax.ForExpr)
-			helper.DumpLog(expr)
 			resultName := []string{}
-			helper.DumpLog(expr.ValExpr.Range().ContainsPos(posHCL))
 			if expr.ValExpr.Range().ContainsPos(posHCL) {
 				if reflect.TypeOf(expr.CollExpr) == hclstructs.ScopeTraversalExpr() {
 					resultName = append(resultName, expr.CollExpr.(*hclsyntax.ScopeTraversalExpr).AsTraversal().RootName())
@@ -283,10 +283,7 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 				}
 
 				scopeExpr := expr.ValExpr.(*hclsyntax.ScopeTraversalExpr)
-				helper.DumpLog(haveDot)
-				helper.DumpLog((len(scopeExpr.AsTraversal()) == 1 && haveDot) || len(scopeExpr.AsTraversal()) > 1)
 				if len(scopeExpr.AsTraversal()) == 1 && !haveDot {
-					helper.DumpLog(vs.Position.Character)
 					result = append(result, lsp.CompletionItem{
 						Label:  expr.ValVar,
 						Detail: fmt.Sprintf(" foreach var(%s)", strings.Join(resultName, ".")),
@@ -317,10 +314,12 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 			}
 		}
 		//tests, errxs := lang.ReferencesInExpr(expr)
-		if origType != hclstructs.ObjectConsExpr() {
-			variables := hclstructs.GetExprVariables(origType, expr, posHCL)
 
-			if len(variables) != 0 {
+		variables := hclstructs.GetExprVariables(origType, expr, posHCL)
+
+		if len(variables) == 1 || variables == nil {
+
+			if variables != nil && len(variables) != 0 {
 				result = tfstructs.GetVarAttributeCompletion(tfstructs.GetVarAttributeRequest{
 					Variables: variables[0],
 					Result:    result,
@@ -390,7 +389,7 @@ func TextDocumentComplete(ctx context.Context, vs lsp.CompletionParams) (lsp.Com
 			}
 		} else {
 			if blocks == nil && attr != nil {
-				if r, found, _ := tfstructs.GetNestingAttributeCompletion(attr, result, configType, origConfig, fileDir, posHCL); found {
+				if r, found, _ := tfstructs.GetNestingAttributeCompletion(attr, result, configType, origConfig, fileDir, posHCL, origType); found {
 					return r, nil
 				}
 			}

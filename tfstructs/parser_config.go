@@ -10,14 +10,15 @@ import (
 	"github.com/juliosueiras/terraform-lsp/helper"
 	"github.com/sourcegraph/go-lsp"
 	"github.com/zclconf/go-cty/cty"
+	"reflect"
 	"strings"
 )
 
-func GetNestingAttributeCompletion(attr *hcl.Attribute, result []lsp.CompletionItem, configType string, origConfig interface{}, fileDir string, posHCL hcl.Pos) (lsp.CompletionList, bool, error) {
+func GetNestingAttributeCompletion(attr *hcl.Attribute, result []lsp.CompletionItem, configType string, origConfig interface{}, fileDir string, posHCL hcl.Pos, origType reflect.Type) (lsp.CompletionList, bool, error) {
 
 	topName := attr.Name
 
-	res := hclstructs.GetExprVariables(hclstructs.ObjectConsExpr(), attr.Expr, posHCL)
+	res := hclstructs.GetExprVariables(origType, attr.Expr, posHCL)
 
 	attrs := hcl.Traversal{}
 	if len(res) != 0 {
@@ -189,18 +190,16 @@ func GetConfig(file *configs.File, posHCL hcl.Pos) (*hclsyntax.Body, interface{}
 	}
 
 	//* configs.Backends
-	for _, v := range file.Backends {
-		helper.DumpLog(v)
-		helper.DumpLog(TerraformBackends["remote"])
-		//		helper.DumpLog(backend.Backend{
-		//
-		//		})
-		//		if v.Config.(*hclsyntax.Body).Range().ContainsPos(posHCL) {
-		//			configType = "backend"
-		//			origConfig = v
-		//			config = v.Config.(interface{}).(*hclsyntax.Body)
-		//		}
-	}
+	//for _, v := range file.Backends {
+	//	//		helper.DumpLog(backend.Backend{
+	//	//
+	//	//		})
+	//	//		if v.Config.(*hclsyntax.Body).Range().ContainsPos(posHCL) {
+	//	//			configType = "backend"
+	//	//			origConfig = v
+	//	//			config = v.Config.(interface{}).(*hclsyntax.Body)
+	//	//		}
+	//}
 
 	for _, v := range file.ModuleCalls {
 		if v.Config.(*hclsyntax.Body).Range().ContainsPos(posHCL) {
@@ -297,8 +296,6 @@ func GetAttributeCompletion(result []lsp.CompletionItem, configType string, orig
 				Items:        result,
 			}, true, nil
 		}
-
-		helper.DumpLog(res)
 
 		for k, v := range res.Schema.Block.Attributes {
 			if v.Optional || v.Required {
@@ -674,6 +671,50 @@ func GetTopLevelCompletion() []lsp.CompletionItem {
 		lsp.CompletionItem{
 			Label:  "data",
 			Detail: " type",
+		},
+		lsp.CompletionItem{
+			Label:  "module",
+			Detail: " type",
+		},
+		lsp.CompletionItem{
+			Label:  "output",
+			Detail: " type",
+		},
+		lsp.CompletionItem{
+			Label:  "variable",
+			Detail: " type",
+		},
+		lsp.CompletionItem{
+			Label:  "provider",
+			Detail: " type",
+		},
+		lsp.CompletionItem{
+			Label:  "terraform",
+			Detail: " type",
+		},
+	}
+
+}
+
+func GetTopLevelCompletionWithPos(pos hcl.Pos) []lsp.CompletionItem {
+	return []lsp.CompletionItem{
+		lsp.CompletionItem{
+			Label:            "resource",
+			Kind:             lsp.CIKField,
+			Detail:           " type",
+			InsertTextFormat: lsp.ITFSnippet,
+			InsertText: `resource "${1}" "${2}" { 
+  ${3}
+}`,
+		},
+		lsp.CompletionItem{
+			Label:            "data",
+			Kind:             lsp.CIKField,
+			Detail:           " type",
+			InsertTextFormat: lsp.ITFSnippet,
+			InsertText: `data "${1}" "${2}" { 
+  ${3}
+}`,
 		},
 		lsp.CompletionItem{
 			Label:  "module",

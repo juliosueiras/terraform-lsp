@@ -1,13 +1,11 @@
 package helper
 
 import (
-	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/terraform/configs"
 	"github.com/juliosueiras/terraform-lsp/hclstructs"
 	"github.com/juliosueiras/terraform-lsp/memfs"
-	log "github.com/sirupsen/logrus"
 	"github.com/sourcegraph/go-lsp"
 	"github.com/spf13/afero"
 	"github.com/zclconf/go-cty/cty"
@@ -23,12 +21,16 @@ func CheckAndGetConfig(parser *configs.Parser, originalFile afero.File, line int
 	pos := FindOffset(string(fileText), line, character)
 
 	tempFile, _ := afero.TempFile(memfs.MemFs, "", "check_tf_lsp")
+  found := false
+
+  if int64(pos) != -1 {
+    found = true
+    originalFile.ReadAt(result, int64(pos))
+  } 
 
 	defer memfs.MemFs.Remove(tempFile.Name())
 
-	originalFile.ReadAt(result, int64(pos))
-
-	if string(result) == "." {
+	if found && string(result) == "." {
 		fileText[pos] = ' '
 
 		fileText = []byte(strings.Replace(string(fileText), ". ", "  ", -1))
@@ -52,7 +54,6 @@ func CheckAndGetConfig(parser *configs.Parser, originalFile afero.File, line int
 		tempFile.Truncate(0)
 		tempFile.Seek(0, 0)
 		tempFile.Write([]byte(strings.Join(textLines, "\n")))
-		DumpLog(textLines)
 		resultConfig, diags := parser.LoadConfigFileOverride(tempFile.Name())
 		testRes, _ := parser.LoadHCLFile(tempFile.Name())
 		return resultConfig, diags, character, testRes.(*hclsyntax.Body), false
@@ -69,6 +70,7 @@ func FindOffset(fileText string, line, column int) int {
 		column = 1
 	}
 
+  //variable \"test\" {\n    \n}\n\n
 	currentCol := 1
 	currentLine := 1
 
@@ -85,14 +87,6 @@ func FindOffset(fileText string, line, column int) int {
 		}
 	}
 	return -1
-}
-
-func DumpLog(res interface{}) {
-	result := spew.Sdump(res)
-	strSlice := strings.Split(result, "\n")
-	for _, s := range strSlice {
-		log.Debug(s)
-	}
 }
 
 func ParseVariables(vars hcl.Traversal, configVars map[string]*configs.Variable, completionItems []lsp.CompletionItem) []lsp.CompletionItem {
@@ -130,6 +124,7 @@ func parseVariables(vars hcl.Traversal, configVarsType *cty.Type, completionItem
 		return completionItems
 	}
 
+
 	if !configVarsType.IsObjectType() {
 		if et := configVarsType.MapElementType(); et != nil {
 			return parseVariables(vars[1:], et, completionItems)
@@ -151,12 +146,8 @@ func parseVariables(vars hcl.Traversal, configVarsType *cty.Type, completionItem
 			return parseVariables(vars[1:], &attr, completionItems)
 		}
 	} else if reflect.TypeOf(vars[0]) == hclstructs.TraverseIndex() {
-		DumpLog(configVarsType)
 
 		return parseVariables(vars[1:], configVarsType, completionItems)
-	} else {
-		DumpLog(vars[0])
-		DumpLog(configVarsType)
 	}
 
 	return nil

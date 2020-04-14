@@ -39,6 +39,14 @@ func TemplateWrapExpr() reflect.Type {
 	return GetType(&hclsyntax.TemplateWrapExpr{})
 }
 
+func AnonSymbolExpr() reflect.Type {
+	return GetType(&hclsyntax.AnonSymbolExpr{})
+}
+
+func SplatExpr() reflect.Type {
+	return GetType(&hclsyntax.SplatExpr{})
+}
+
 // Traverse hcl
 func TraverseAttr() reflect.Type {
 	return GetType(hcl.TraverseAttr{})
@@ -68,6 +76,10 @@ func GetExprStringType(origType reflect.Type) string {
 		return "string interpolation"
 	case ObjectConsExpr():
 		return "object"
+	case SplatExpr():
+		return "splat"
+	case AnonSymbolExpr():
+		return "anon symbol"
 	default:
 		return "undefined"
 	}
@@ -117,7 +129,12 @@ func GetExprVariables(origType reflect.Type, expr hcl.Expression, posHCL hcl.Pos
 	case TupleConsExpr():
 		expr := expr.(*hclsyntax.TupleConsExpr)
 		if expr.Range().ContainsPos(posHCL) {
-			return expr.Variables()
+			for _, newExpr := range expr.ExprList() {
+				if newExpr.Range().ContainsPos(posHCL) {
+					return newExpr.Variables()
+				}
+			}
+			return nil
 		}
 
 	// Need wrapped
@@ -125,6 +142,18 @@ func GetExprVariables(origType reflect.Type, expr hcl.Expression, posHCL hcl.Pos
 		expr := expr.(*hclsyntax.TemplateWrapExpr)
 		if expr.Range().ContainsPos(posHCL) {
 			return expr.Variables()
+		}
+
+	case AnonSymbolExpr():
+		expr := expr.(*hclsyntax.AnonSymbolExpr)
+		if expr.Range().ContainsPos(posHCL) || expr.SrcRange.ContainsPos(posHCL) {
+			return expr.Variables()
+		}
+
+	case SplatExpr():
+		expr := expr.(*hclsyntax.SplatExpr)
+		if expr.MarkerRange.ContainsPos(posHCL) || expr.Range().ContainsPos(posHCL) {
+			return expr.Source.Variables()
 		}
 
 	// Need more check
@@ -138,6 +167,7 @@ func GetExprVariables(origType reflect.Type, expr hcl.Expression, posHCL hcl.Pos
 				firstVar := hcl.TraverseAttr{
 					Name: v.KeyExpr.(*hclsyntax.ObjectConsKeyExpr).AsTraversal().RootName(),
 				}
+
 				vars := hcl.Traversal{
 					firstVar,
 				}

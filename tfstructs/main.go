@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform/lang"
 	"github.com/hashicorp/terraform/providers"
 	"github.com/hashicorp/terraform/provisioners"
-	"github.com/juliosueiras/terraform-lsp/helper"
+	"github.com/juliosueiras/terraform-lsp/loghelper"
 	"github.com/juliosueiras/terraform-lsp/memfs"
 	"github.com/zclconf/go-cty/cty"
 	"path/filepath"
@@ -67,13 +67,13 @@ func GetResourceSchemaForDiags(resourceType string, config hcl.Body, targetDir s
 	}
 
 	if err != nil {
-		helper.DumpLog(err)
+		loghelper.DumpLog(err)
 		return nil
 	}
 
 	providerResource, err := provider.GetRawResourceTypeSchema(resourceType)
 	if err != nil {
-		helper.DumpLog(err)
+		loghelper.DumpLog(err)
 		provider.Kill()
 		return nil
 	}
@@ -107,13 +107,13 @@ func GetResourceSchema(resourceType string, config hcl.Body, targetDir string, o
 	}
 
 	if err != nil {
-		helper.DumpLog(err)
+		loghelper.DumpLog(err)
 		return nil
 	}
 
 	providerResource, err := provider.GetRawResourceTypeSchema(resourceType)
 	if err != nil {
-		helper.DumpLog(err)
+		loghelper.DumpLog(err)
 		provider.Kill()
 		return nil
 	}
@@ -155,13 +155,13 @@ func GetDataSourceSchemaForDiags(dataSourceType string, config hcl.Body, targetD
 		provider, err = GetProvider(dataSourceType, targetDir)
 	}
 	if err != nil {
-		helper.DumpLog(err)
+		loghelper.DumpLog(err)
 		return nil
 	}
 
 	providerDataSource, err := provider.GetRawDataSourceTypeSchema(dataSourceType)
 	if err != nil {
-		helper.DumpLog(err)
+		loghelper.DumpLog(err)
 		provider.Kill()
 		return nil
 	}
@@ -191,13 +191,13 @@ func GetDataSourceSchema(dataSourceType string, config hcl.Body, targetDir strin
 		provider, err = GetProvider(dataSourceType, targetDir)
 	}
 	if err != nil {
-		helper.DumpLog(err)
+		loghelper.DumpLog(err)
 		return nil
 	}
 
 	providerDataSource, err := provider.GetRawDataSourceTypeSchema(dataSourceType)
 	if err != nil {
-		helper.DumpLog(err)
+		loghelper.DumpLog(err)
 		provider.Kill()
 		return nil
 	}
@@ -243,7 +243,7 @@ func GetProvisioner(provisionerType string, targetDir string) (*Client, error) {
 func GetProvisionerSchema(provisionerType string, config hcl.Body, targetDir string) *TerraformProvisionerSchema {
 	provisioner, err := GetProvider(provisionerType, targetDir)
 	if err != nil {
-		helper.DumpLog(err)
+		loghelper.DumpLog(err)
 		return nil
 	}
 
@@ -274,7 +274,7 @@ func GetProvisionerSchema(provisionerType string, config hcl.Body, targetDir str
 func GetProviderSchemaForDiags(providerType string, config hcl.Body, targetDir string, variables map[string]cty.Value) *TerraformSchema {
 	provider, err := GetProvider(providerType, targetDir)
 	if err != nil {
-		helper.DumpLog(err)
+		loghelper.DumpLog(err)
 		return nil
 	}
 
@@ -300,7 +300,7 @@ func GetProviderSchemaForDiags(providerType string, config hcl.Body, targetDir s
 func GetProviderSchema(providerType string, config hcl.Body, targetDir string) *TerraformSchema {
 	provider, err := GetProvider(providerType, targetDir)
 	if err != nil {
-		helper.DumpLog(err)
+		loghelper.DumpLog(err)
 		return nil
 	}
 

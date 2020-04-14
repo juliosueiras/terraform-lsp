@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform/lang"
 	"github.com/juliosueiras/terraform-lsp/hclstructs"
 	"github.com/juliosueiras/terraform-lsp/helper"
+	//	"github.com/juliosueiras/terraform-lsp/loghelper"
 	"github.com/sourcegraph/go-lsp"
 	"github.com/zclconf/go-cty/cty"
 	"os"
@@ -39,8 +40,6 @@ func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionI
 		searchLevel -= 1
 	}
 
-	helper.DumpLog(targetDir)
-
 	variables := map[string]cty.Value{
 		"path": cty.ObjectVal(map[string]cty.Value{
 			"cwd":    cty.StringVal(request.FileDir),
@@ -55,6 +54,11 @@ func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionI
 		"terraform": cty.ObjectVal(map[string]cty.Value{
 			"workspace": cty.StringVal(""),
 		}),
+	}
+
+	//rootName := ""
+	if request.Variables.IsRelative() {
+		request.Variables = request.Variables[1:]
 	}
 
 	if request.Variables.RootName() == "var" {
@@ -79,8 +83,6 @@ func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionI
 				},
 			)
 
-			helper.DumpLog(testVal)
-
 			origType := reflect.TypeOf(found.Expr)
 
 			if origType == hclstructs.ObjectConsExpr() {
@@ -99,7 +101,6 @@ func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionI
 
 				for _, v := range items {
 					origType2 := reflect.TypeOf(v.ValueExpr)
-					helper.DumpLog(v.KeyExpr.(*hclsyntax.ObjectConsKeyExpr).Wrapped.(*hclsyntax.ScopeTraversalExpr).AsTraversal().RootName())
 					request.Result = append(request.Result, lsp.CompletionItem{
 						Label:  v.KeyExpr.(*hclsyntax.ObjectConsKeyExpr).Wrapped.(*hclsyntax.ScopeTraversalExpr).AsTraversal().RootName(),
 						Detail: fmt.Sprintf(" %s", hclstructs.GetExprStringType(origType2)),
@@ -107,8 +108,6 @@ func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionI
 				}
 			}
 
-			helper.DumpLog(request.Variables[2:])
-			helper.DumpLog(testVal.Type())
 			request.Result = append(request.Result, helper.ParseOtherAttr(request.Variables[2:], testVal.Type(), request.Result)...)
 
 			return request.Result
