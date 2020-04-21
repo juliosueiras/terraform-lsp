@@ -22,6 +22,11 @@ func (s *Server) handleRPCCancel(ctx context.Context, req *Request) (interface{}
 	if err := req.UnmarshalParams(&ids); err != nil {
 		return nil, err
 	}
+	s.cancelRequests(ctx, ids)
+	return nil, nil
+}
+
+func (s *Server) cancelRequests(ctx context.Context, ids []json.RawMessage) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for _, raw := range ids {
@@ -30,7 +35,6 @@ func (s *Server) handleRPCCancel(ctx context.Context, req *Request) (interface{}
 			s.log("Cancelled request %s by client order", id)
 		}
 	}
-	return nil, nil
 }
 
 // methodFunc is a replication of handler.Func redeclared to avert a cycle.

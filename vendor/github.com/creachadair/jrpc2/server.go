@@ -182,11 +182,7 @@ func (s *Server) dispatch(next jrequests, ch channel.Sender) func() error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			t.val, t.err = s.invoke(t.ctx, t.m, &Request{
-				id:     t.reqID,
-				method: t.reqM,
-				params: t.params,
-			})
+			t.val, t.err = s.invoke(t.ctx, t.m, t.hreq)
 		}()
 	}
 
@@ -223,20 +219,26 @@ func (s *Server) checkAndAssign(next jrequests) tasks {
 	var ts tasks
 	for _, req := range next {
 		s.log("Checking request for %q: %s", req.M, string(req.P))
-		t := &task{reqID: req.ID, reqM: req.M, batch: req.batch}
+		fid := fixID(req.ID)
+		t := &task{
+			hreq:  &Request{id: fid, method: req.M, params: req.P},
+			batch: req.batch,
+		}
 		if req.err != nil {
 			t.err = req.err // deferred validation error
-		} else if id := string(fixID(req.ID)); id != "" && s.used[id] != nil {
+		} else if id := string(fid); id != "" && s.used[id] != nil {
 			t.err = Errorf(code.InvalidRequest, "duplicate request id %q", id)
 		} else if !s.versionOK(req.V) {
 			t.err = ErrInvalidVersion
 		} else if req.M == "" {
 			t.err = Errorf(code.InvalidRequest, "empty method name")
-		} else if m := s.assign(req.M); m == nil {
-			t.err = Errorf(code.MethodNotFound, "no such method %q", req.M)
-		} else if s.setContext(t, id, req.M, req.P) {
-			t.m = m
+		} else if s.setContext(t, id) {
+			t.m = s.assign(t.ctx, req.M)
+			if t.m == nil {
+				t.err = Errorf(code.MethodNotFound, "no such method %q", req.M)
+			}
 		}
+
 		if t.err != nil {
 			s.log("Task error: %v", t.err)
 			s.metrics.Count("rpc.errors", 1)
@@ -248,32 +250,28 @@ func (s *Server) checkAndAssign(next jrequests) tasks {
 
 // setContext constructs and attaches a request context to t, and reports
 // whether this succeeded.
-func (s *Server) setContext(t *task, id, method string, rawParams json.RawMessage) bool {
-	base, params, err := s.dectx(context.Background(), method, rawParams)
-	t.params = params
+func (s *Server) setContext(t *task, id string) bool {
+	base, params, err := s.dectx(context.Background(), t.hreq.method, t.hreq.params)
+	t.hreq.params = params
 	if err != nil {
 		t.err = Errorf(code.InternalError, "invalid request context: %v", err)
 		return false
 	}
 
 	// Check request.
-	if err := s.ckreq(base, &Request{
-		id:     json.RawMessage(id),
-		method: method,
-		params: params,
-	}); err != nil {
+	if err := s.ckreq(base, t.hreq); err != nil {
 		t.err = err
 		return false
 	}
 
+	t.ctx = context.WithValue(base, inboundRequestKey{}, t.hreq)
+
 	// Store the cancellation for a request that needs a reply, so that we can
 	// respond to rpc.cancel requests.
 	if id != "" {
-		ctx, cancel := context.WithCancel(base)
+		ctx, cancel := context.WithCancel(t.ctx)
 		s.used[id] = cancel
 		t.ctx = ctx
-	} else {
-		t.ctx = base
 	}
 	return true
 }
@@ -281,11 +279,7 @@ func (s *Server) setContext(t *task, id, method string, rawParams json.RawMessag
 // invoke invokes the handler m for the specified request type, and marshals
 // the return value into JSON if there is one.
 func (s *Server) invoke(base context.Context, h Handler, req *Request) (json.RawMessage, error) {
-	ctx := context.WithValue(base, inboundRequestKey{}, req)
-	ctx = context.WithValue(ctx, serverMetricsKey{}, s.metrics)
-	if s.allowP {
-		ctx = context.WithValue(ctx, serverPushKey{}, s.Push)
-	}
+	ctx := context.WithValue(base, serverKey{}, s)
 	if err := s.sem.Acquire(ctx, 1); err != nil {
 		return nil, err
 	}
@@ -475,7 +469,7 @@ type ServerInfo struct {
 
 // assign returns a Handler to handle the specified name, or nil.
 // The caller must hold s.mu.
-func (s *Server) assign(name string) Handler {
+func (s *Server) assign(ctx context.Context, name string) Handler {
 	if s.builtin && strings.HasPrefix(name, "rpc.") {
 		switch name {
 		case rpcServerInfo:
@@ -486,7 +480,7 @@ func (s *Server) assign(name string) Handler {
 			return nil // reserved
 		}
 	}
-	return s.mux.Assign(name)
+	return s.mux.Assign(ctx, name)
 }
 
 // pushError reports an error for the given request ID directly back to the
@@ -494,11 +488,11 @@ func (s *Server) assign(name string) Handler {
 // hold s.mu when calling this method.
 func (s *Server) pushError(err error) {
 	s.log("Invalid request: %v", err)
-	var jerr *jerror
+	var jerr *Error
 	if e, ok := err.(*Error); ok {
-		jerr = e.tojerror()
+		jerr = e
 	} else {
-		jerr = jerrorf(code.FromError(err), "%v", err)
+		jerr = &Error{code: code.FromError(err), message: err.Error()}
 	}
 
 	nw, err := encode(s.ch, jresponses{{
@@ -536,11 +530,9 @@ func (s *Server) versionOK(v string) bool {
 type task struct {
 	m Handler // the assigned handler (after assignment)
 
-	ctx    context.Context // the context passed to the handler
-	reqID  json.RawMessage // the original request ID
-	reqM   string          // the original method name
-	params json.RawMessage // the encoded parameters
-	batch  bool            // whether the request was part of a batch
+	ctx   context.Context // the context passed to the handler
+	hreq  *Request        // the request passed to the handler
+	batch bool            // whether the request was part of a batch
 
 	val json.RawMessage // the result value (when complete)
 	err error           // the error value (when complete)
@@ -551,7 +543,7 @@ type tasks []*task
 func (ts tasks) responses() jresponses {
 	var rsps jresponses
 	for _, task := range ts {
-		if task.reqID == nil {
+		if task.hreq.id == nil {
 			// Spec: "The Server MUST NOT reply to a Notification, including
 			// those that are within a batch request.  Notifications are not
 			// confirmable by definition, since they do not have a Response
@@ -564,18 +556,18 @@ func (ts tasks) responses() jresponses {
 				continue
 			}
 		}
-		rsp := &jresponse{V: Version, ID: task.reqID, batch: task.batch}
+		rsp := &jresponse{V: Version, ID: task.hreq.id, batch: task.batch}
 		if rsp.ID == nil {
 			rsp.ID = json.RawMessage("null")
 		}
 		if task.err == nil {
 			rsp.R = task.val
 		} else if e, ok := task.err.(*Error); ok {
-			rsp.E = e.tojerror()
+			rsp.E = e
 		} else if c := code.FromError(task.err); c != code.NoError {
-			rsp.E = jerrorf(c, "%v", task.err)
+			rsp.E = &Error{code: c, message: task.err.Error()}
 		} else {
-			rsp.E = jerrorf(code.InternalError, "%v", task.err)
+			rsp.E = &Error{code: code.InternalError, message: task.err.Error()}
 		}
 		rsps = append(rsps, rsp)
 	}

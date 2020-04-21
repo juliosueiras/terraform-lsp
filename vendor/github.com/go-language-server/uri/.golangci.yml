@@ -1,0 +1,103 @@
+run:
+  concurrency: 12
+  deadline: 5m
+  issues-exit-code: 1
+  tests: true
+  # skip-dirs:
+  skip-files:
+    - ".*\\.pb\\.go"
+    - ".*(.|_)gen\\.go"
+  modules-download-mode: vendor
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+    # exclude: .errcheckignore
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/go-language-server/uri
+  golint:
+    min-confidence: 0.3
+  govet:
+    check-shadowing: false
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+      - experimental
+      - opinionated
+    settings:
+      hugeParam:
+        sizeThreshold: 128
+      rangeExprCopy:
+        sizeThreshold: 512
+      rangeValCopy:
+        sizeThreshold: 128
+  maligned:
+    suggest-new: true
+  misspell:
+    locale: US
+  nakedret:
+    max-func-lines: 30
+  prealloc:
+    simple: true
+    range-loops: true
+    for-loops: false
+  unparam:
+    algo: cha
+    check-exported: true
+  unused:
+    check-exported: true
+
+linters:
+  enable:
+    - deadcode
+    - depguard
+    - dupl
+    - errcheck
+    - goconst
+    - gocritic
+    - gofmt
+    - goimports
+    - golint
+    - ineffassign
+    - maligned
+    - misspell
+    - prealloc
+    - structcheck
+    - typecheck
+    - unconvert
+    - varcheck
+    - gosimple
+    - govet
+    - interfacer
+    - staticcheck
+    - stylecheck
+    - unparam
+  disable:
+    - gochecknoglobals
+    - gochecknoinits
+    - gocyclo
+    - gosec
+    - lll
+    - nakedret
+    - unused
+  fast: true
+
+issues:
+  exclude-rules:
+    - path: "const.go"
+      linters:
+        - golint
+        - misspell
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true

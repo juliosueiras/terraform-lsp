@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/creachadair/jrpc2/channel"
 	"github.com/creachadair/jrpc2/code"
@@ -14,7 +15,7 @@ import (
 // no method is available to handle the request.
 type Assigner interface {
 	// Assign returns the handler for the named method, or nil.
-	Assign(method string) Handler
+	Assign(ctx context.Context, method string) Handler
 
 	// Names returns a slice of all known method names for the assigner.  The
 	// resulting slice is ordered lexicographically and contains no duplicates.
@@ -139,15 +140,12 @@ func (r *Response) UnmarshalResult(v interface{}) error {
 
 // MarshalJSON converts the response to equivalent JSON.
 func (r *Response) MarshalJSON() ([]byte, error) {
-	jr := &jresponse{
+	return json.Marshal(&jresponse{
 		V:  Version,
 		ID: json.RawMessage(r.id),
 		R:  r.result,
-	}
-	if r.err != nil {
-		jr.E = r.err.tojerror()
-	}
-	return json.Marshal(jr)
+		E:  r.err,
+	})
 }
 
 // wait blocks until p is complete. It is safe to call this multiple times and
@@ -162,17 +160,16 @@ func (r *Response) wait() {
 		// The first waiter must update the response value, THEN close the
 		// channel and cancel the context. This order ensures that subsequent
 		// waiters all get the same response, and do not race on accessing it.
-		r.id = string(fixID(raw.ID))
-		if e := raw.E; e != nil {
-			r.err = &Error{
-				message: e.Msg,
-				code:    code.Code(e.Code),
-				data:    e.Data,
-			}
-		}
+		r.err = raw.E
 		r.result = raw.R
 		close(r.ch)
 		r.cancel() // release the context observer
+
+		// Sanity check: The response IDs should match. Do this after delivery so
+		// a failure does not orphan resources.
+		if id := string(fixID(raw.ID)); id != r.id {
+			panic(fmt.Sprintf("Mismatched response ID %q expecting %q", id, r.id))
+		}
 	}
 }
 
@@ -264,7 +261,7 @@ func (j *jrequest) parseJSON(data []byte) error {
 		case "params":
 			// As a special case, reduce "null" to nil in the parameters.
 			// Otherwise, require per spec that val is an array or object.
-			if string(val) != "null" {
+			if !isNull(val) {
 				j.P = val
 			}
 			if len(j.P) != 0 && j.P[0] != '[' && j.P[0] != '{' {
@@ -307,7 +304,7 @@ func (j *jresponses) parseJSON(data []byte) error {
 type jresponse struct {
 	V  string          `json:"jsonrpc"`          // must be Version
 	ID json.RawMessage `json:"id,omitempty"`     // set if request had an ID
-	E  *jerror         `json:"error,omitempty"`  // set on error
+	E  *Error          `json:"error,omitempty"`  // set on error
 	R  json.RawMessage `json:"result,omitempty"` // set on success
 
 	// Allow the server to send a response that looks like a notification.
@@ -320,25 +317,17 @@ type jresponse struct {
 
 func (j jresponse) isServerRequest() bool { return j.E == nil && j.R == nil && j.M != "" }
 
-// jerror is the transmission format of an error object.
 type jerror struct {
-	Code int32           `json:"code"`
-	Msg  string          `json:"message,omitempty"` // optional
-	Data json.RawMessage `json:"data,omitempty"`    // optional
-}
-
-func jerrorf(code code.Code, msg string, args ...interface{}) *jerror {
-	return &jerror{
-		Code: int32(code),
-		Msg:  fmt.Sprintf(code.String()+": "+msg, args...),
-	}
+	C int32           `json:"code"`
+	M string          `json:"message,omitempty"`
+	D json.RawMessage `json:"data,omitempty"`
 }
 
 // fixID filters id, treating "null" as a synonym for an unset ID.  This
 // supports interoperation with JSON-RPC v1 where "null" is used as an ID for
 // notifications.
 func fixID(id json.RawMessage) json.RawMessage {
-	if string(id) != "null" {
+	if !isNull(id) {
 		return id
 	}
 	return nil
@@ -351,4 +340,46 @@ func encode(ch channel.Sender, rsps jresponses) (int, error) {
 		return 0, err
 	}
 	return len(bits), ch.Send(bits)
+}
+
+// Network guesses a network type for the specified address.  The assignment of
+// a network type uses the following heuristics:
+//
+// If s does not have the form [host]:port, the network is assigned as "unix".
+// The network "unix" is also assigned if port == "", port contains characters
+// other than ASCII letters, digits, and "-", or if host contains a "/".
+//
+// Otherwise, the network is assigned as "tcp". Note that this function does
+// not verify whether the address is lexically valid.
+func Network(s string) string {
+	i := strings.LastIndex(s, ":")
+	if i < 0 {
+		return "unix"
+	}
+	host, port := s[:i], s[i+1:]
+	if port == "" || !isServiceName(port) {
+		return "unix"
+	} else if strings.IndexByte(host, '/') >= 0 {
+		return "unix"
+	}
+	return "tcp"
+}
+
+// isServiceName reports whether s looks like a legal service name from the
+// services(5) file. The grammar of such names is not well-defined, but for our
+// purposes it includes letters, digits, and "-".
+func isServiceName(s string) bool {
+	for i := range s {
+		b := s[i]
+		if b >= '0' && b <= '9' || b >= 'A' && b <= 'Z' || b >= 'a' && b <= 'z' || b == '-' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+// isNull reports whether msg is exactly the JSON "null" value.
+func isNull(msg json.RawMessage) bool {
+	return len(msg) == 4 && msg[0] == 'n' && msg[1] == 'u' && msg[2] == 'l' && msg[3] == 'l'
 }
