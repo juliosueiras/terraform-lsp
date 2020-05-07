@@ -7,6 +7,10 @@
 
 This is LSP (Language Server Protocol) for Terraform
 
+**IMPORTANT:** Currently there is two terraform lsp, one is this one and the other one is [terraform-ls](https://github.com/hashicorp/terraform-ls), which contain details about this repo as well.
+
+The aim to have a unified lsp for terraform in the future, but for now there is two concurrent development with collabration to each other, this repo is aim for more experimental features, and the terraform-ls is aim for stableness 
+
 **NOTE:** This is first stage of the plugin, so is experimental
 
 - [Terraform LSP](#terraform-lsp)
