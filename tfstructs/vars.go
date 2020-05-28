@@ -2,6 +2,7 @@ package tfstructs
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/terraform/addrs"
@@ -9,12 +10,14 @@ import (
 	"github.com/hashicorp/terraform/lang"
 	"github.com/juliosueiras/terraform-lsp/hclstructs"
 	"github.com/juliosueiras/terraform-lsp/helper"
+
 	//	"github.com/juliosueiras/terraform-lsp/loghelper"
-	"github.com/sourcegraph/go-lsp"
-	"github.com/zclconf/go-cty/cty"
 	"os"
 	"path/filepath"
 	"reflect"
+
+	"github.com/sourcegraph/go-lsp"
+	"github.com/zclconf/go-cty/cty"
 )
 
 type GetVarAttributeRequest struct {
@@ -75,42 +78,44 @@ func GetVarAttributeCompletion(request GetVarAttributeRequest) []lsp.CompletionI
 				}
 			}
 
-			testVal, _ := found.Expr.Value(
-				&hcl.EvalContext{
-					// Build Full Tree
-					Variables: variables,
-					Functions: scope.Functions(),
-				},
-			)
+			if found != nil {
+				testVal, _ := found.Expr.Value(
+					&hcl.EvalContext{
+						// Build Full Tree
+						Variables: variables,
+						Functions: scope.Functions(),
+					},
+				)
 
-			origType := reflect.TypeOf(found.Expr)
+				origType := reflect.TypeOf(found.Expr)
 
-			if origType == hclstructs.ObjectConsExpr() {
-				items := found.Expr.(*hclsyntax.ObjectConsExpr).Items
-				for _, v := range request.Variables[2:] {
-					for _, l := range items {
-						if v.(hcl.TraverseAttr).Name == l.KeyExpr.(*hclsyntax.ObjectConsKeyExpr).Wrapped.(*hclsyntax.ScopeTraversalExpr).AsTraversal().RootName() {
-							origType2 := reflect.TypeOf(l.ValueExpr)
+				if origType == hclstructs.ObjectConsExpr() {
+					items := found.Expr.(*hclsyntax.ObjectConsExpr).Items
+					for _, v := range request.Variables[2:] {
+						for _, l := range items {
+							if v.(hcl.TraverseAttr).Name == l.KeyExpr.(*hclsyntax.ObjectConsKeyExpr).Wrapped.(*hclsyntax.ScopeTraversalExpr).AsTraversal().RootName() {
+								origType2 := reflect.TypeOf(l.ValueExpr)
 
-							if origType2 == hclstructs.ObjectConsExpr() {
-								items = l.ValueExpr.(*hclsyntax.ObjectConsExpr).Items
+								if origType2 == hclstructs.ObjectConsExpr() {
+									items = l.ValueExpr.(*hclsyntax.ObjectConsExpr).Items
+								}
 							}
 						}
 					}
+
+					for _, v := range items {
+						origType2 := reflect.TypeOf(v.ValueExpr)
+						request.Result = append(request.Result, lsp.CompletionItem{
+							Label:  v.KeyExpr.(*hclsyntax.ObjectConsKeyExpr).Wrapped.(*hclsyntax.ScopeTraversalExpr).AsTraversal().RootName(),
+							Detail: fmt.Sprintf(" %s", hclstructs.GetExprStringType(origType2)),
+						})
+					}
 				}
 
-				for _, v := range items {
-					origType2 := reflect.TypeOf(v.ValueExpr)
-					request.Result = append(request.Result, lsp.CompletionItem{
-						Label:  v.KeyExpr.(*hclsyntax.ObjectConsKeyExpr).Wrapped.(*hclsyntax.ScopeTraversalExpr).AsTraversal().RootName(),
-						Detail: fmt.Sprintf(" %s", hclstructs.GetExprStringType(origType2)),
-					})
-				}
+				request.Result = append(request.Result, helper.ParseOtherAttr(request.Variables[2:], testVal.Type(), request.Result)...)
+
+				return request.Result
 			}
-
-			request.Result = append(request.Result, helper.ParseOtherAttr(request.Variables[2:], testVal.Type(), request.Result)...)
-
-			return request.Result
 
 		} else if len(request.Variables) == 1 {
 			for _, v := range request.Files.Locals {
