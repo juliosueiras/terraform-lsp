@@ -3,8 +3,11 @@ on:
   pull_request:
   push:
 jobs:
-  tests:
-    runs-on: ubuntu-latest
+  test:
+  strategy:
+    matrix:
+      platform: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v2
       - uses: cachix/install-nix-action@9
