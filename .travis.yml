@@ -1,9 +1,11 @@
 jobs:
   include:
     - language: nix
+      nix: 2.3.5
       os: linux
       env: TRAVIS_OS=linux
     - language: nix
+      nix: 2.3.5
       os: osx
       env: TRAVIS_OS=osx
     - stage: GoReleaser Deployment
@@ -11,7 +13,7 @@ jobs:
         - docker
       language: go
       go:
-      - 1.12
+      - 1.14
       #if: tag IS present
       script: skip
       deploy:
