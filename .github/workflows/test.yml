@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v2
-      - uses: cachix/install-nix-action@9
+      - uses: cachix/install-nix-action@v9
         with:
           nix_path: nixpkgs=channel;nixos-unstable
       - run: nix-build
