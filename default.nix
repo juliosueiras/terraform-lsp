@@ -1,7 +1,7 @@
 { pkgs ? import <nixpkgs> {} }:
 with pkgs;
 
-buildGo112Module rec {
+buildGoModule rec {
 
   name = "terraform-lsp";
   version = "0.0.9";
