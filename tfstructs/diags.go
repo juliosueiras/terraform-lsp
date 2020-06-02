@@ -2,19 +2,23 @@ package tfstructs
 
 import (
 	"fmt"
+	"os"
+
 	v2 "github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/terraform/configs"
 	"github.com/zclconf/go-cty/cty"
-	"os"
+
 	//"github.com/juliosueiras/terraform-lsp/helper"
 	terragruntConfig "github.com/gruntwork-io/terragrunt/config"
 	terragruntOptions "github.com/gruntwork-io/terragrunt/options"
 	oldHCL2 "github.com/hashicorp/hcl2/hcl"
 	"github.com/juliosueiras/terraform-lsp/memfs"
+
 	//"github.com/juliosueiras/terraform-lsp/helper"
+	"path/filepath"
+
 	"github.com/sourcegraph/go-lsp"
 	"github.com/spf13/afero"
-	"path/filepath"
 )
 
 func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
@@ -181,18 +185,27 @@ func GetDiagnostics(fileName string, originalFile string) []lsp.Diagnostic {
 	variables["data"] = cty.ObjectVal(resultDataTypes)
 
 	for _, diag := range tfDiags {
+
+		startPosition := lsp.Position{Line: 0, Character: 0}
+		endPosition := lsp.Position{Line: 0, Character: 0}
+
+		if diag.Subject != nil {
+			startPosition = lsp.Position{
+				Line:      diag.Subject.Start.Line - 1,
+				Character: diag.Subject.Start.Column - 1,
+			}
+			endPosition = lsp.Position{
+				Line:      diag.Subject.End.Line - 1,
+				Character: diag.Subject.End.Column - 1,
+			}
+		}
+
 		result = append(result, lsp.Diagnostic{
 			Severity: lsp.DiagnosticSeverity(diag.Severity),
 			Message:  diag.Detail,
 			Range: lsp.Range{
-				Start: lsp.Position{
-					Line:      diag.Subject.Start.Line - 1,
-					Character: diag.Subject.Start.Column - 1,
-				},
-				End: lsp.Position{
-					Line:      diag.Subject.End.Line - 1,
-					Character: diag.Subject.End.Column - 1,
-				},
+				Start: startPosition,
+				End:   endPosition,
 			},
 			Source: "Terraform",
 		})
