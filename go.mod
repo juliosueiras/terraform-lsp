@@ -1,6 +1,6 @@
 module github.com/juliosueiras/terraform-lsp
 
-go 1.12
+go 1.14
 
 require (
 	github.com/creachadair/jrpc2 v0.4.2
