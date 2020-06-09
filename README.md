@@ -107,6 +107,7 @@ All Todos are listed [here](Todo.md)
 - LSP structure using [Sourcegraph's go-lsp](https://github.com/sourcegraph/go-lsp)
 - JSONRPC2 using [JRPC2](https://bitbucket.org/creachadair/jrpc2)
 - [provider communication](./tfstructs/provider.go) is mostly adapted from [tfschema](https://github.com/minamijoyo/tfschema)
+- @awilkins for adding GitHub actions
 
 
 ## License
