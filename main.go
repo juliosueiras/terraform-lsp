@@ -19,23 +19,25 @@ var GitCommit string
 var Date string
 
 func init() {
-	flag.Bool("tcp", false, "Use TCP instead of Stdio(which is default)")
-	flag.Int("port", 9900, "Port for TCP Server")
-	flag.String("address", "127.0.0.1", "Address for TCP Server")
 
-	flag.String("log-location", "", "Location of the lsp log")
-	flag.String("log-jrpc2-location", "", "Location of the lsp log for jrpc2")
+  serveCmd := flag.NewFlagSet("serve", flag.ExitOnError)
+	serveCmd.Bool("tcp", false, "Use TCP instead of Stdio(which is default)")
+	serveCmd.Int("port", 9900, "Port for TCP Server")
+	serveCmd.String("address", "127.0.0.1", "Address for TCP Server")
 
-	flag.Bool("debug", false, "Enable debug output")
-	flag.Bool("debug-jrpc2", false, "Enable debug output for jrpc2")
+	serveCmd.String("log-location", "", "Location of the lsp log")
+	serveCmd.String("log-jrpc2-location", "", "Location of the lsp log for jrpc2")
 
-	flag.Bool("enable-log-file", false, "Enable log file")
-	flag.Bool("enable-log-jrpc2-file", false, "Enable log file for JRPC2")
+	serveCmd.Bool("debug", false, "Enable debug output")
+	serveCmd.Bool("debug-jrpc2", false, "Enable debug output for jrpc2")
 
-	flag.Bool("version", false, "Show version")
+	serveCmd.Bool("enable-log-file", false, "Enable log file")
+	serveCmd.Bool("enable-log-jrpc2-file", false, "Enable log file for JRPC2")
+
+	serveCmd.Bool("version", false, "Show version")
 
 	// Load config from file
-	configViper()
+	configViper(serveCmd)
 }
 
 func main() {
@@ -107,9 +109,11 @@ func main() {
 	}
 }
 
-func configViper() {
+func configViper(serveCmd *flag.FlagSet) {
 	// Accept CLI arguments
-	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-	flag.Parse()
+	pflag.CommandLine.AddGoFlagSet(serveCmd)
+  if len(os.Args) >= 2 && os.Args[1] == "serve" {
+    serveCmd.Parse(os.Args[2:])
+  }
 	viper.BindPFlags(pflag.CommandLine)
 }

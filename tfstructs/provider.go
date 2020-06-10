@@ -4,6 +4,7 @@ package tfstructs
 import (
 	"fmt"
 	//log "github.com/sirupsen/logrus"
+	"encoding/json"
 	"go/build"
 	"io/ioutil"
 	oldLog "log"
@@ -194,6 +195,21 @@ func pluginDirs(targetDir string) ([]string, error) {
 
 		if _, err := os.Stat(filepath.Join(dir, ".terraform")); err == nil {
 			autoInstalledDir = filepath.Join(dir, ".terraform", "plugins", arch)
+
+			if _, err := os.Stat(filepath.Join(dir, ".terraform", "plugins", "selections.json")); err == nil {
+				selections := make(map[string]interface{})
+				file, _ := ioutil.ReadFile(filepath.Join(dir, ".terraform", "plugins", "selections.json"))
+				json.Unmarshal(file, &selections)
+
+				for pluginPath, info := range selections {
+					version := info.(map[string]interface{})["version"]
+
+					if _, err := os.Stat(filepath.Join(dir, ".terraform", "plugins", pluginPath, version.(string), arch)); err == nil {
+						dirs = append(dirs, filepath.Join(dir, ".terraform", "plugins", pluginPath, version.(string), arch))
+					}
+				}
+			}
+
 			break
 		}
 
