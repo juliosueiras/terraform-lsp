@@ -2,7 +2,7 @@
 
 [![Gitter](https://badges.gitter.im/terraform-lsp/community.svg)](https://gitter.im/terraform-lsp/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 ![terraform version](https://img.shields.io/badge/terraform-0.12.13-blue.svg)
-[![Nix Build](https://img.shields.io/travis/com/juliosueiras/terraform-lsp.svg?logo=travis&label=Nix%20Build)](https://travis-ci.com/juliosueiras/terraform-lsp)
+![Release](https://github.com/juliosueiras/terraform-lsp/workflows/Release/badge.svg)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjuliosueiras%2Fterraform-lsp.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjuliosueiras%2Fterraform-lsp?ref=badge_shield)
 
 This is LSP (Language Server Protocol) for Terraform
@@ -34,7 +34,7 @@ Release can be found [here](https://github.com/juliosueiras/terraform-lsp/releas
 
 ### Requirement
 
-it will need Go 1.12+
+it will need Go 1.14+
 
 ### Native
 
@@ -107,6 +107,7 @@ All Todos are listed [here](Todo.md)
 - LSP structure using [Sourcegraph's go-lsp](https://github.com/sourcegraph/go-lsp)
 - JSONRPC2 using [JRPC2](https://bitbucket.org/creachadair/jrpc2)
 - [provider communication](./tfstructs/provider.go) is mostly adapted from [tfschema](https://github.com/minamijoyo/tfschema)
+- [awilkins](https://github.com/awilkins) for adding GitHub actions
 
 
 ## License
