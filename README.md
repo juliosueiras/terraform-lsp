@@ -5,7 +5,7 @@
 ![Release](https://github.com/juliosueiras/terraform-lsp/workflows/Release/badge.svg)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjuliosueiras%2Fterraform-lsp.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjuliosueiras%2Fterraform-lsp?ref=badge_shield)
 
-This is LSP (Language Server Protocol) for Terraform
+This is a LSP (Language Server Protocol) for Terraform
 
 **IMPORTANT:** Currently there is two terraform lsp, one is this one and the other one is [terraform-ls](https://github.com/hashicorp/terraform-ls), which contain details about this repo as well.
 
