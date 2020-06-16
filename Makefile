@@ -3,10 +3,15 @@ VERSION := $$(git describe --tags)
 COMMIT  := $$(git rev-list -1 HEAD)
 DST     ?= ~/.bin/
 
-default:
+terraform-lsp:
 	go build -ldflags "-X main.GitCommit=$(COMMIT) -X main.Version=$(VERSION) -X main.Date=$(DATE)"
 
-copy:
-	go build -ldflags "-X main.GitCommit=$(COMMIT) -X main.Version=$(VERSION) -X main.Date=$(DATE)" && cp ./terraform-lsp $(DST) && cp ./terraform-lsp ~/
+copy: terraform-lsp
+	cp ./terraform-lsp $(DST) && cp ./terraform-lsp ~/
 
-.PHONY: copy
+clean:
+	rm -f terraform-lsp
+
+default: terraform-lsp
+
+.PHONY: clean copy
