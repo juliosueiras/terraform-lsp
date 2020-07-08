@@ -8,6 +8,7 @@ buildGoModule rec {
   src = ./.;
 
   modSha256 = null; 
+  vendorSha256 = null; 
 
   buildPhase = ''
     runHook preBuild
