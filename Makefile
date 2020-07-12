@@ -1,7 +1,17 @@
-default:
-	go build -ldflags "-X main.GitCommit=$$(git rev-list -1 HEAD) -X main.Version=$$(git describe --tags) -X main.Date=$$(date --rfc-3339=date)"
+DATE    := $$(date +%Y-%m-%dT%T%z)
+VERSION := $$(git describe --tags)
+COMMIT  := $$(git rev-list -1 HEAD)
+DST     ?= ~/.bin/
 
-copy:
-	go build -ldflags "-X main.GitCommit=$$(git rev-list -1 HEAD) -X main.Version=$$(git describe --tags) -X main.Date=$$(date --rfc-3339=date)" && cp ./terraform-lsp ~/.bin/ && cp ./terraform-lsp ~/
+terraform-lsp:
+	go build -ldflags "-X main.GitCommit=$(COMMIT) -X main.Version=$(VERSION) -X main.Date=$(DATE)"
 
-.PHONY: copy
+copy: terraform-lsp
+	cp ./terraform-lsp $(DST) && cp ./terraform-lsp ~/
+
+clean:
+	rm -f terraform-lsp
+
+default: terraform-lsp
+
+.PHONY: clean copy
