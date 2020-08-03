@@ -6,7 +6,7 @@ on:
     types: [created, edited]
 jobs:
   test:
-    if: "'pull_request|push'.contains(github.event_name) || github.event.comment.body == 'rebuild'"
+    if: contains(['pull_request, 'push'], github.event_name) || github.event.comment.body == 'rebuild'
     strategy:
       matrix:
         platform: [ubuntu-latest, macos-latest]
