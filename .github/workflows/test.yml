@@ -2,8 +2,11 @@ name: Test
 on:
   pull_request:
   push:
+  issue_comment:
+    types: [created, edited]
 jobs:
   test:
+    if: contains('pull_request|push', github.event_name) || github.event.comment.body == 'rebuild'
     strategy:
       matrix:
         platform: [ubuntu-latest, macos-latest]
