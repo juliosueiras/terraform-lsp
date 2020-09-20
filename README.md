@@ -1,13 +1,15 @@
 # Terraform LSP
 
 [![Gitter](https://badges.gitter.im/terraform-lsp/community.svg)](https://gitter.im/terraform-lsp/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-![terraform version](https://img.shields.io/badge/terraform-0.12.13-blue.svg)
+![terraform version](https://img.shields.io/badge/terraform-0.13.0-blue.svg)
 ![Release](https://github.com/juliosueiras/terraform-lsp/workflows/Release/badge.svg)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjuliosueiras%2Fterraform-lsp.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjuliosueiras%2Fterraform-lsp?ref=badge_shield)
 
 This is LSP (Language Server Protocol) for Terraform
 
 **IMPORTANT:** Currently there is two terraform lsp, one is this one and the other one is [terraform-ls](https://github.com/hashicorp/terraform-ls), which contain details about this repo as well.
+
+**Current Focus: Terraform State Reading**
 
 The aim to have a unified lsp for terraform in the future, but for now there is two concurrent development with collabration to each other, this repo is aim for more experimental features, and the terraform-ls is aim for stableness
 
