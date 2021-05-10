@@ -9,6 +9,8 @@ This is LSP (Language Server Protocol) for Terraform
 
 **IMPORTANT:** Currently there is two terraform lsp, one is this one and the other one is [terraform-ls](https://github.com/hashicorp/terraform-ls), which contain details about this repo as well.
 
+**New update to fix for Terraform 0.15 will be up in a day or two**
+
 **Current Focus: Terraform State Reading**
 
 The aim to have a unified lsp for terraform in the future, but for now there is two concurrent development with collabration to each other, this repo is aim for more experimental features, and the terraform-ls is aim for stableness
@@ -110,6 +112,7 @@ All Todos are listed [here](Todo.md)
 ## Bugs
 - Order of completion items
 - Issue with block
+- Issue on Terraform v0.15 due to different behaviour on where it store its provider json
 
 ## Credits
 - LSP structure using [Sourcegraph's go-lsp](https://github.com/sourcegraph/go-lsp)
