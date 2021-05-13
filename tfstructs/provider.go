@@ -16,6 +16,8 @@ import (
 	"strings"
 
 	internalPlugin "github.com/hashicorp/go-plugin"
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/terraform/plugin"
 	"github.com/hashicorp/terraform/plugin/discovery"
 	"github.com/hashicorp/terraform/providers"
@@ -206,6 +208,48 @@ func pluginDirs(targetDir string) ([]string, error) {
 
 					if _, err := os.Stat(filepath.Join(dir, ".terraform", "plugins", pluginPath, version.(string), arch)); err == nil {
 						dirs = append(dirs, filepath.Join(dir, ".terraform", "plugins", pluginPath, version.(string), arch))
+					}
+				}
+			}
+
+			if _, err := os.Stat(filepath.Join(dir, ".terraform.lock.hcl")); err == nil {
+				file, _ := ioutil.ReadFile(filepath.Join(dir, ".terraform.lock.hcl"))
+				lockFile, _ := hclsyntax.ParseConfig(file, ".terraform.lock.hcl", hcl.Pos{
+					Column: 1,
+					Line:   1,
+				})
+
+				parsedLock, _ := lockFile.Body.Content(&hcl.BodySchema{
+					Blocks: []hcl.BlockHeaderSchema{
+						{
+							LabelNames: []string{"provider"},
+							Type:       "provider",
+						},
+					},
+				})
+
+				for _, provider := range parsedLock.Blocks {
+					name := []string{
+						dir,
+						".terraform",
+						"providers",
+					}
+					name = append(name, strings.Split(provider.Labels[0], "/")...)
+
+					vars, _ := provider.Body.JustAttributes()
+					version := ""
+					for _, i := range vars {
+						if i.Name == "version" {
+							tempVersion, _ := i.Expr.Value(nil)
+
+							version = tempVersion.AsString()
+						}
+					}
+
+					result := append(name, version, arch)
+
+					if _, err := os.Stat(filepath.Join(result...)); err == nil {
+						dirs = append(dirs, filepath.Join(result...))
 					}
 				}
 			}
