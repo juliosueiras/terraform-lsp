@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {} }:
+{ pkgs ? import (fetchTarball "https://github.com/nixos/nixpkgs/archive/e10c65cdb35.tar.gz") {} }:
 with pkgs;
 
 buildGoModule rec {
