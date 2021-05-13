@@ -1,28 +1,23 @@
-{ pkgs ? import (fetchTarball "https://github.com/nixos/nixpkgs/archive/e10c65cdb35.tar.gz") {} }:
+{ pkgs ? import
+  (fetchTarball "https://github.com/nixos/nixpkgs/archive/e10c65cdb35.tar.gz")
+  { } }:
 with pkgs;
 
-buildGoModule rec {
+buildGoPackage rec {
 
   name = "terraform-lsp";
-  version = "0.0.9";
+  version = "0.0.12";
   src = ./.;
 
-  modSha256 = null; 
-  vendorSha256 = null; 
-
-  buildPhase = ''
-    runHook preBuild
-    runHook renameImports
-    go install -ldflags="-s -w -X main.Version=${version} -X main.GitCommit='omitted' -X main.Date='omitted'"
-    runHook postBuild
-  '';
+  buildFlagsArray = [
+    ''-ldflags="-s -w -X main.Version=${version} -X main.GitCommit='omitted' -X main.Date='omitted'"''
+  ];
 
   goPackagePath = "github.com/juliosueiras/terraform-lsp";
-  subPackages = [ "." ];
 
   meta = with stdenv.lib; {
     description = "Language Server Protocol for Terraform";
-    homepage = https://github.com/juliosueiras/terraform-lsp;
+    homepage = "https://github.com/juliosueiras/terraform-lsp";
     license = licenses.mit;
     maintainers = with maintainers; [ juliosueiras ];
     platforms = platforms.all;
