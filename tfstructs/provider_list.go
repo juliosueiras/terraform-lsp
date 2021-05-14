@@ -26,312 +26,312 @@ func init() {
 }
 
 var majorCloud = map[string]TerraformProvider{
-	"alicloud": TerraformProvider{
+	"alicloud": {
 		Name: "AliCloud",
 		Type: "Major Cloud",
 	},
-	"aws": TerraformProvider{
+	"aws": {
 		Name: "AWS",
 		Type: "Major Cloud",
 	},
-	"azurerm": TerraformProvider{
+	"azurerm": {
 		Name: "AzureRM",
 		Type: "Major Cloud",
 	},
-	"azurestack": TerraformProvider{
+	"azurestack": {
 		Name: "Azure Stack",
 		Type: "Major Cloud",
 	},
-	"google": TerraformProvider{
+	"google": {
 		Name: "Google Cloud Platform",
 		Type: "Major Cloud",
 	},
-	"oci": TerraformProvider{
+	"oci": {
 		Name: "Oracle Cloud Infrastructure",
 		Type: "Major Cloud",
 	},
-	"oraclepaas": TerraformProvider{
+	"oraclepaas": {
 		Name: "Oracle Cloud Platform",
 		Type: "Major Cloud",
 	},
-	"opc": TerraformProvider{
+	"opc": {
 		Name: "Oracle Public Cloud",
 		Type: "Major Cloud",
 	},
-	"nsxt": TerraformProvider{
+	"nsxt": {
 		Name: "VMware NSX-T",
 		Type: "Major Cloud",
 	},
-	"vcd": TerraformProvider{
+	"vcd": {
 		Name: "vCloud Director",
 		Type: "Major Cloud",
 	},
-	"vra7": TerraformProvider{
+	"vra7": {
 		Name: "VMware vRA7",
 		Type: "Major Cloud",
 	},
-	"vsphere": TerraformProvider{
+	"vsphere": {
 		Name: "VMware vSphere",
 		Type: "Major Cloud",
 	},
 }
 
 var database = map[string]TerraformProvider{
-	"influxdb": TerraformProvider{
+	"influxdb": {
 		Name: "InfluxDB",
 		Type: "Database",
 	},
-	"mysql": TerraformProvider{
+	"mysql": {
 		Name: "MySQL",
 		Type: "Database",
 	},
-	"postgresql": TerraformProvider{
+	"postgresql": {
 		Name: "PostgreSQL",
 		Type: "Database",
 	},
 }
 
 var infra = map[string]TerraformProvider{
-	"chef": TerraformProvider{
+	"chef": {
 		Name: "Chef",
 		Type: "Infra",
 	},
-	"consul": TerraformProvider{
+	"consul": {
 		Name: "Consul",
 		Type: "Infra",
 	},
-	"docker": TerraformProvider{
+	"docker": {
 		Name: "Docker",
 		Type: "Infra",
 	},
-	"helm": TerraformProvider{
+	"helm": {
 		Name: "Helm",
 		Type: "Infra",
 	},
-	"kubernetes": TerraformProvider{
+	"kubernetes": {
 		Name: "Kubernetes",
 		Type: "Infra",
 	},
-	"mailgun": TerraformProvider{
+	"mailgun": {
 		Name: "Mailgun",
 		Type: "Infra",
 	},
-	"nomad": TerraformProvider{
+	"nomad": {
 		Name: "Nomad",
 		Type: "Infra",
 	},
-	"rabbitmq": TerraformProvider{
+	"rabbitmq": {
 		Name: "RabbitMQ",
 		Type: "Infra",
 	},
-	"rancher": TerraformProvider{
+	"rancher": {
 		Name: "Rancher",
 		Type: "Infra",
 	},
-	"rightscale": TerraformProvider{
+	"rightscale": {
 		Name: "RightScale",
 		Type: "Infra",
 	},
-	"rundeck": TerraformProvider{
+	"rundeck": {
 		Name: "Rundeck",
 		Type: "Infra",
 	},
-	"spotinst": TerraformProvider{
+	"spotinst": {
 		Name: "Spotinst",
 		Type: "Infra",
 	},
-	"terraform": TerraformProvider{
+	"terraform": {
 		Name: "Terraform",
 		Type: "Infra",
 	},
-	"tfe": TerraformProvider{
+	"tfe": {
 		Name: "Terraform Enterprise",
 		Type: "Infra",
 	},
-	"vault": TerraformProvider{
+	"vault": {
 		Name: "Vault",
 		Type: "Infra",
 	},
 }
 
 var cloud = map[string]TerraformProvider{
-	"arukas": TerraformProvider{
+	"arukas": {
 		Name: "Arukas",
 		Type: "Cloud",
 	},
-	"brightbox": TerraformProvider{
+	"brightbox": {
 		Name: "Brightbox",
 		Type: "Cloud",
 	},
-	"clc": TerraformProvider{
+	"clc": {
 		Name: "CenturyLinkCloud",
 		Type: "Cloud",
 	},
-	"cloudscale": TerraformProvider{
+	"cloudscale": {
 		Name: "CloudScale.ch",
 		Type: "Cloud",
 	},
-	"cloudstack": TerraformProvider{
+	"cloudstack": {
 		Name: "CloudStack",
 		Type: "Cloud",
 	},
-	"digitalocean": TerraformProvider{
+	"digitalocean": {
 		Name: "DigitalOcean",
 		Type: "Cloud",
 	},
-	"fastly": TerraformProvider{
+	"fastly": {
 		Name: "Fastly",
 		Type: "Cloud",
 	},
-	"flexibleengine": TerraformProvider{
+	"flexibleengine": {
 		Name: "FlexibleEngine",
 		Type: "Cloud",
 	},
-	"gridscale": TerraformProvider{
+	"gridscale": {
 		Name: "Gridscale",
 		Type: "Cloud",
 	},
-	"hedvig": TerraformProvider{
+	"hedvig": {
 		Name: "Hedvig",
 		Type: "Cloud",
 	},
-	"heroku": TerraformProvider{
+	"heroku": {
 		Name: "Heroku",
 		Type: "Cloud",
 	},
-	"hcloud": TerraformProvider{
+	"hcloud": {
 		Name: "Hetzner Cloud",
 		Type: "Cloud",
 	},
-	"huaweicloud": TerraformProvider{
+	"huaweicloud": {
 		Name: "HuaweiCloud",
 		Type: "Cloud",
 	},
-	"jdcloud": TerraformProvider{
+	"jdcloud": {
 		Name: "JDCloud",
 		Type: "Cloud",
 	},
-	"linode": TerraformProvider{
+	"linode": {
 		Name: "Linode",
 		Type: "Cloud",
 	},
-	"ncloud": TerraformProvider{
+	"ncloud": {
 		Name: "Naver Cloud",
 		Type: "Cloud",
 	},
-	"nutanix": TerraformProvider{
+	"nutanix": {
 		Name: "Nutanix",
 		Type: "Cloud",
 	},
-	"openstack": TerraformProvider{
+	"openstack": {
 		Name: "OpenStack",
 		Type: "Cloud",
 	},
-	"opentelekomcloud": TerraformProvider{
+	"opentelekomcloud": {
 		Name: "OpenTelekomCloud",
 		Type: "Cloud",
 	},
-	"ovh": TerraformProvider{
+	"ovh": {
 		Name: "OVH",
 		Type: "Cloud",
 	},
-	"packet": TerraformProvider{
+	"packet": {
 		Name: "Packet",
 		Type: "Cloud",
 	},
-	"profitbricks": TerraformProvider{
+	"profitbricks": {
 		Name: "ProfitBricks",
 		Type: "Cloud",
 	},
-	"scaleway": TerraformProvider{
+	"scaleway": {
 		Name: "Scaleway",
 		Type: "Cloud",
 	},
-	"skytap": TerraformProvider{
+	"skytap": {
 		Name: "Skytap",
 		Type: "Cloud",
 	},
-	"selectel": TerraformProvider{
+	"selectel": {
 		Name: "Selectel",
 		Type: "Cloud",
 	},
-	"softlayer": TerraformProvider{
+	"softlayer": {
 		Name: "SoftLayer",
 		Type: "Cloud",
 	},
-	"telefonicaopencloud": TerraformProvider{
+	"telefonicaopencloud": {
 		Name: "TelefonicaOpenCloud",
 		Type: "Cloud",
 	},
-	"tencentcloud": TerraformProvider{
+	"tencentcloud": {
 		Name: "TencentCloud",
 		Type: "Cloud",
 	},
-	"triton": TerraformProvider{
+	"triton": {
 		Name: "Triton",
 		Type: "Cloud",
 	},
-	"ucloud": TerraformProvider{
+	"ucloud": {
 		Name: "UCloud",
 		Type: "Cloud",
 	},
-	"yandex": TerraformProvider{
+	"yandex": {
 		Name: "Yandex",
 		Type: "Cloud",
 	},
-	"oneandone": TerraformProvider{
+	"oneandone": {
 		Name: "1&1",
 		Type: "Cloud",
 	},
 }
 
 var misc = map[string]TerraformProvider{
-	"acme":     TerraformProvider{Name: "ACME", Type: "Misc"},
-	"archive":  TerraformProvider{Name: "Archive", Type: "Misc"},
-	"cobbler":  TerraformProvider{Name: "Cobbler", Type: "Misc"},
-	"external": TerraformProvider{Name: "External", Type: "Misc"},
-	"ignition": TerraformProvider{Name: "Ignition", Type: "Misc"},
-	"local":    TerraformProvider{Name: "Local", Type: "Misc"},
-	"netlify":  TerraformProvider{Name: "Netlify", Type: "Misc"},
-	"null":     TerraformProvider{Name: "Null", Type: "Misc"},
-	"random":   TerraformProvider{Name: "Random", Type: "Misc"},
-	"template": TerraformProvider{Name: "Template", Type: "Misc"},
-	"tls":      TerraformProvider{Name: "TLS", Type: "Misc"},
+	"acme":     {Name: "ACME", Type: "Misc"},
+	"archive":  {Name: "Archive", Type: "Misc"},
+	"cobbler":  {Name: "Cobbler", Type: "Misc"},
+	"external": {Name: "External", Type: "Misc"},
+	"ignition": {Name: "Ignition", Type: "Misc"},
+	"local":    {Name: "Local", Type: "Misc"},
+	"netlify":  {Name: "Netlify", Type: "Misc"},
+	"null":     {Name: "Null", Type: "Misc"},
+	"random":   {Name: "Random", Type: "Misc"},
+	"template": {Name: "Template", Type: "Misc"},
+	"tls":      {Name: "TLS", Type: "Misc"},
 }
 
 var monitoring = map[string]TerraformProvider{
-	"circonus":     TerraformProvider{Name: "Circonus", Type: "Monitoring"},
-	"datadog":      TerraformProvider{Name: "Datadog", Type: "Monitoring"},
-	"dyn":          TerraformProvider{Name: "Dyn", Type: "Monitoring"},
-	"grafana":      TerraformProvider{Name: "Grafana", Type: "Monitoring"},
-	"icinga2":      TerraformProvider{Name: "Icinga2", Type: "Monitoring"},
-	"librato":      TerraformProvider{Name: "Librato", Type: "Monitoring"},
-	"logentries":   TerraformProvider{Name: "Logentries", Type: "Monitoring"},
-	"logicmonitor": TerraformProvider{Name: "LogicMonitor", Type: "Monitoring"},
-	"newrelic":     TerraformProvider{Name: "New Relic", Type: "Monitoring"},
-	"opsgenie":     TerraformProvider{Name: "OpsGenie", Type: "Monitoring"},
-	"pagerduty":    TerraformProvider{Name: "PagerDuty", Type: "Monitoring"},
-	"runscope":     TerraformProvider{Name: "Runscope", Type: "Monitoring"},
-	"statuscake":   TerraformProvider{Name: "StatusCake", Type: "Monitoring"},
+	"circonus":     {Name: "Circonus", Type: "Monitoring"},
+	"datadog":      {Name: "Datadog", Type: "Monitoring"},
+	"dyn":          {Name: "Dyn", Type: "Monitoring"},
+	"grafana":      {Name: "Grafana", Type: "Monitoring"},
+	"icinga2":      {Name: "Icinga2", Type: "Monitoring"},
+	"librato":      {Name: "Librato", Type: "Monitoring"},
+	"logentries":   {Name: "Logentries", Type: "Monitoring"},
+	"logicmonitor": {Name: "LogicMonitor", Type: "Monitoring"},
+	"newrelic":     {Name: "New Relic", Type: "Monitoring"},
+	"opsgenie":     {Name: "OpsGenie", Type: "Monitoring"},
+	"pagerduty":    {Name: "PagerDuty", Type: "Monitoring"},
+	"runscope":     {Name: "Runscope", Type: "Monitoring"},
+	"statuscake":   {Name: "StatusCake", Type: "Monitoring"},
 }
 
 var network = map[string]TerraformProvider{
-	"cloudflare": TerraformProvider{Name: "Cloudflare", Type: "Network"},
-	"ciscoasa":   TerraformProvider{Name: "Cisco ASA", Type: "Network"},
-	"dns":        TerraformProvider{Name: "DNS", Type: "Network"},
-	"dnsimple":   TerraformProvider{Name: "DNSimple", Type: "Network"},
-	"dme":        TerraformProvider{Name: "DNSMadeEasy", Type: "Network"},
-	"bigip":      TerraformProvider{Name: "F5 BIG-IP", Type: "Network"},
-	"fortios":    TerraformProvider{Name: "FortiOS", Type: "Network"},
-	"http":       TerraformProvider{Name: "HTTP", Type: "Network"},
-	"ns1":        TerraformProvider{Name: "NS1", Type: "Network"},
-	"panos":      TerraformProvider{Name: "Palo Alto Networks", Type: "Network"},
-	"powerdns":   TerraformProvider{Name: "PowerDNS", Type: "Network"},
-	"ultradns":   TerraformProvider{Name: "UltraDNS", Type: "Network"},
+	"cloudflare": {Name: "Cloudflare", Type: "Network"},
+	"ciscoasa":   {Name: "Cisco ASA", Type: "Network"},
+	"dns":        {Name: "DNS", Type: "Network"},
+	"dnsimple":   {Name: "DNSimple", Type: "Network"},
+	"dme":        {Name: "DNSMadeEasy", Type: "Network"},
+	"bigip":      {Name: "F5 BIG-IP", Type: "Network"},
+	"fortios":    {Name: "FortiOS", Type: "Network"},
+	"http":       {Name: "HTTP", Type: "Network"},
+	"ns1":        {Name: "NS1", Type: "Network"},
+	"panos":      {Name: "Palo Alto Networks", Type: "Network"},
+	"powerdns":   {Name: "PowerDNS", Type: "Network"},
+	"ultradns":   {Name: "UltraDNS", Type: "Network"},
 }
 
 var vcs = map[string]TerraformProvider{
-	"gitlab":    TerraformProvider{Name: "GitLab", Type: "VCS"},
-	"github":    TerraformProvider{Name: "GitHub", Type: "VCS"},
-	"bitbucket": TerraformProvider{Name: "Bitbucket", Type: "VCS"},
+	"gitlab":    {Name: "GitLab", Type: "VCS"},
+	"github":    {Name: "GitHub", Type: "VCS"},
+	"bitbucket": {Name: "Bitbucket", Type: "VCS"},
 }
