@@ -3,15 +3,15 @@ package channel
 import (
 	"bufio"
 	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
-
-	"golang.org/x/xerrors"
 )
 
-// Header defines a framing that transmits and receives messages using a header
-// prefix similar to HTTP, in which mimeType describes the content type.
+// StrictHeader defines a framing that transmits and receives messages using a
+// header prefix similar to HTTP, in which mimeType describes the content type.
 //
 // Specifically, each message is sent in the format:
 //
@@ -28,10 +28,15 @@ import (
 //    \r\n
 //    123\n
 //
-// If mimeType == "", the Content-Type header is omitted. Note, however, that
-// the framing function returned by Header does not verify that the encoding of
-// messages matches the declared mimeType.
-func Header(mimeType string) Framing {
+// If mimeType == "", the Content-Type header is omitted when sending.
+//
+// If the content type of an otherwise-valid received message does not match
+// the expected value, Recv returns the decoded message along with an error of
+// concrete type *ContentTypeMismatchError.
+//
+// Note: The framing returned by StrictHeader does not verify the encoding of a
+// message matches the declared mimeType.
+func StrictHeader(mimeType string) Framing {
 	return func(r io.Reader, wc io.WriteCloser) Channel {
 		var ctype string
 		if mimeType != "" {
@@ -45,6 +50,17 @@ func Header(mimeType string) Framing {
 			buf:   bytes.NewBuffer(nil),
 		}
 	}
+}
+
+// A ContentTypeMismatchError is reported by the Recv method of a Header
+// framing when the content type of the message does not match the type
+// expected by the channel.
+type ContentTypeMismatchError struct {
+	Got, Want string // the observed and expected content type values
+}
+
+func (c *ContentTypeMismatchError) Error() string {
+	return fmt.Sprintf("content type mismatch: got %q, want %q", c.Got, c.Want)
 }
 
 // An hdr implements Channel. Messages sent on a hdr channel are framed as a
@@ -72,7 +88,10 @@ func (h *hdr) Send(msg []byte) error {
 	return err
 }
 
-// Recv implements part of the Channel interface.
+// Recv implements part of the Channel interface. If the content type of the
+// received message does not match the expected value, Recv returns the decoded
+// message along with an error of concrete type *ContentTypeMismatchError.  The
+// caller may choose to ignore this error by testing explicitly for this type.
 func (h *hdr) Recv() ([]byte, error) {
 	var contentType, contentLength string
 	for {
@@ -94,22 +113,24 @@ func (h *hdr) Recv() ([]byte, error) {
 				contentLength = clean
 			}
 		} else {
-			return nil, xerrors.New("invalid header line")
+			return nil, errors.New("invalid header line")
 		}
 	}
 
-	// Verify that the content-type matches what we expect.
+	// Verify that the content-type matches what we expect, but defer reporting
+	// it until the message has been fully decoded.
+	var contentErr error
 	if contentType != h.mtype {
-		return nil, xerrors.New("invalid content-type")
+		contentErr = &ContentTypeMismatchError{Got: contentType, Want: h.mtype}
 	}
 
 	// Parse out the required content-length field.
 	if contentLength == "" {
-		return nil, xerrors.New("missing required content-length")
+		return nil, errors.New("missing required content-length")
 	}
 	size, err := strconv.Atoi(contentLength)
 	if err != nil || size < 0 {
-		return nil, xerrors.New("invalid content-length")
+		return nil, errors.New("invalid content-length")
 	}
 
 	// We need to use ReadFull here because the buffered reader may not have a
@@ -123,11 +144,33 @@ func (h *hdr) Recv() ([]byte, error) {
 	if _, err := io.ReadFull(h.rd, data[:size]); err != nil {
 		return nil, err
 	}
-	return data[:size], nil
+	return data[:size], contentErr
 }
 
 // Close implements part of the Channel interface.
 func (h *hdr) Close() error { return h.wc.Close() }
+
+// Header returns a framing that behaves as StrictHeader, but allows received
+// messages to omit the Content-Type header without error. An error will still
+// be reported if a content-type is set but does not match.
+func Header(mimeType string) Framing {
+	strict := StrictHeader(mimeType)
+	return func(r io.Reader, wc io.WriteCloser) Channel {
+		return opthdr{strict(r, wc).(*hdr)}
+	}
+}
+
+// An opthdr is a wrapper around hdr that filters out the error reported when
+// the inbound message does not specify a content-type.
+type opthdr struct{ *hdr }
+
+func (o opthdr) Recv() ([]byte, error) {
+	msg, err := o.hdr.Recv()
+	if v, ok := err.(*ContentTypeMismatchError); ok && v.Got == "" {
+		err = nil
+	}
+	return msg, err
+}
 
 // LSP is a header framing (see Header) that transmits and receives messages on
 // r and wc using the MIME type application/vscode-jsonrpc. This is the format

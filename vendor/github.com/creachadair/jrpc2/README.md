@@ -1,11 +1,10 @@
 # jrpc2
 
-http://godoc.org/github.com/creachadair/jrpc2
-
+[![GoDoc](https://img.shields.io/static/v1?label=godoc&message=reference&color=blue)](https://pkg.go.dev/github.com/creachadair/jrpc2)
 [![Go Report Card](https://goreportcard.com/badge/github.com/creachadair/jrpc2)](https://goreportcard.com/report/github.com/creachadair/jrpc2)
 
 This repository provides Go package that implements a [JSON-RPC 2.0][spec] client and server.
-There is also a working [example in the Go playground](https://play.golang.org/p/idEcyqBcAZR).
+There is also a working [example in the Go playground](https://play.golang.org/p/RKYAfUOcZz8).
 
 ## Packages
 
@@ -23,11 +22,13 @@ There is also a working [example in the Go playground](https://play.golang.org/p
 
 *  Package [metrics](http://godoc.org/github.com/creachadair/jrpc2/metrics) defines a server metrics collector.
 
-*  Package [proxy](http://godoc.org/github.com/creachadair/jrpc2/proxy) defines a transparent proxy that allows a connected client to be re-exported as a server.
-
 *  Package [server](http://godoc.org/github.com/creachadair/jrpc2/server) provides support for running a server to handle multiple connections, and an in-memory implementation for testing.
 
 [spec]: http://www.jsonrpc.org/specification
+
+### Versioning
+
+This module is currently still at v0 and subject to change. To the extent practical, I try to avoid breaking changes to the API, but when I do make a breaking change I will update the minor version. For bug fixes and non-breaking minor changes I update only the patch. Hence, when going from (say) `v0.11.3` to `v0.12.0`, be advised that some API changes may occur.
 
 ## Implementation Notes
 
@@ -61,11 +62,11 @@ This implementation resolves the conflict in favour of the notification rules. S
 
 Because a server is allowed to reorder the results, a client should not depend on this implementation detail.
 
-### Non-standard server notifications
+### Non-standard server push
 
 The specification defines client and server as follows:
 
 > The Client is defined as the origin of `Request` objects and the handler of `Response` objects.
 > The Server is defined as the origin of `Response` objects and the handler of `Request` objects.
 
-Although a client may also be a server, and vice versa, the specification does not require them to do so. The server notification support defined in the `jrpc2` package is thus "non-standard" in that it allows the server to act as a client, and the client as a server, in the narrow context of "push" notifications. Otherwise the feature is not special: Notifications sent by `*jrpc2.Server.Push` are standard `Request` objects.
+Although a client may also be a server, and vice versa, the specification does not require them to do so. The server notification support defined in the `jrpc2` package is thus "non-standard" in that it allows the server to act as a client, and the client as a server, in the narrow context of "push" notifications and server callbacks. Otherwise the feature is not special: Requests sent by `*jrpc2.Server.Notify` and `*jrpc2.Server.Callback`are standard `Request` objects.

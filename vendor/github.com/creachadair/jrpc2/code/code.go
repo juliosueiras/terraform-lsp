@@ -3,9 +3,8 @@ package code
 
 import (
 	"context"
+	"errors"
 	"fmt"
-
-	"golang.org/x/xerrors"
 )
 
 // A Code is an error response code.
@@ -25,27 +24,27 @@ func (c Code) String() string {
 	return fmt.Sprintf("error code %d", c)
 }
 
-// A Coder is a value that can report an error code value.
-type Coder interface {
-	Code() Code
+// An ErrCoder is a value that can report an error code value.
+type ErrCoder interface {
+	ErrCode() Code
 }
 
 // A codeError wraps a Code to satisfy the standard error interface.  This
 // indirection prevents a Code from accidentally being used as an error value.
-// It also satisfies the Coder interface, allowing the code to be recovered.
+// It also satisfies the ErrCoder interface, allowing the code to be recovered.
 type codeError Code
 
 // Error satisfies the error interface using the registered string for the
 // code, if one is defined, or else a placeholder that describes the value.
 func (c codeError) Error() string { return Code(c).String() }
 
-// Code trivially satisfies the Coder interface.
-func (c codeError) Code() Code { return Code(c) }
+// ErrCode trivially satisfies the ErrCoder interface.
+func (c codeError) ErrCode() Code { return Code(c) }
 
 // Is reports whether err is c or has a code equal to c.
 func (c codeError) Is(err error) bool {
-	v, ok := err.(Coder) // including codeError
-	return ok && v.Code() == Code(c)
+	v, ok := err.(ErrCoder) // including codeError
+	return ok && v.ErrCode() == Code(c)
 }
 
 // Err converts c to an error value, which is nil for code.NoError and
@@ -103,7 +102,7 @@ func Register(value int32, message string) Code {
 
 // FromError returns a Code to categorize the specified error.
 // If err == nil, it returns code.NoError.
-// If err is a Coder, it returns the reported code value.
+// If err is an ErrCoder, it returns the reported code value.
 // If err is context.Canceled, it returns code.Cancelled.
 // If err is context.DeadlineExceeded, it returns code.DeadlineExceeded.
 // Otherwise it returns code.SystemError.
@@ -111,12 +110,12 @@ func FromError(err error) Code {
 	if err == nil {
 		return NoError
 	}
-	var c Coder
-	if xerrors.As(err, &c) {
-		return c.Code()
-	} else if xerrors.Is(err, context.Canceled) {
+	var c ErrCoder
+	if errors.As(err, &c) {
+		return c.ErrCode()
+	} else if errors.Is(err, context.Canceled) {
 		return Cancelled
-	} else if xerrors.Is(err, context.DeadlineExceeded) {
+	} else if errors.Is(err, context.DeadlineExceeded) {
 		return DeadlineExceeded
 	}
 	return SystemError

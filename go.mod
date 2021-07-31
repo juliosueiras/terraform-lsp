@@ -3,7 +3,7 @@ module github.com/juliosueiras/terraform-lsp
 go 1.12
 
 require (
-	github.com/creachadair/jrpc2 v0.4.2
+	github.com/creachadair/jrpc2 v0.19.0
 	github.com/creack/pty v1.1.9 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-errors/errors v1.0.1 // indirect
