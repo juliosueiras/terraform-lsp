@@ -3,7 +3,7 @@
   { } }:
 with pkgs;
 
-buildGoPackage rec {
+buildGo113Package rec {
 
   name = "terraform-lsp";
   version = "0.0.12";
