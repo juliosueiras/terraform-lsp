@@ -3,14 +3,15 @@ package langserver
 import (
 	"context"
 	"fmt"
+	oldLog "log"
+	"net"
+	"os"
+
 	"github.com/creachadair/jrpc2"
 	"github.com/creachadair/jrpc2/channel"
 	"github.com/creachadair/jrpc2/handler"
 	"github.com/creachadair/jrpc2/server"
 	log "github.com/sirupsen/logrus"
-	oldLog "log"
-	"net"
-	"os"
 )
 
 func RunStdioServer(oldLogInstance *oldLog.Logger) {
@@ -48,7 +49,7 @@ func RunTCPServer(address string, port int, oldLogInstance *oldLog.Logger) {
 	ctx, cancelFunc := context.WithCancel(ctx)
 
 	go func() {
-		if err := server.Loop(lst, ServiceMap, &server.LoopOptions{
+		if err := server.Loop(lst, server.Static(ServiceMap), &server.LoopOptions{
 			Framing: newChan,
 			ServerOptions: &jrpc2.ServerOptions{
 				AllowPush: true,
