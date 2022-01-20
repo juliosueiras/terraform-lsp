@@ -1,26 +1,26 @@
 # Vim Support
 
-Todo: add config snippets
+## CoC
 
-- Should work with all LSP plugin on vim
+`terraform-lsp` can be used with [CoC](https://github.com/neoclide/coc.nvim).
 
-### coc.nvim
+#### Requirements
 
-- Install the [coc.nvim plugin](https://github.com/neoclide/coc.nvim)
-- Add the following snippet to the `coc-setting.json` file (editable via `:CocConfig` in NeoVim)
+Install the `terraform-lsp` binary and verify it's available in your `$PATH`.
+
+#### Installation
+
+Go to your `coc-settings.json` file (you can use the following command in Vim: `:CocConfig`).
+
+Add an entry for the terraform language server.
 
 ```json
 {
-	"languageserver": {
-		"terraform": {
-			"command": "terraform-lsp",
-			"filetypes": [
-				"terraform",
-				"tf"
-			],
-			"initializationOptions": {},
-			"settings": {}
-		}
-	}
+  "languageserver": {
+    "terraform": {
+      "command": "terraform-lsp",
+      "filetypes": ["terraform"]
+    }
+  }
 }
 ```
