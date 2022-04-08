@@ -7,7 +7,7 @@
 
 This is LSP (Language Server Protocol) for Terraform
 
-**IMPORTANT:** Currently there is two terraform lsp, one is this one and the other one is [terraform-ls](https://github.com/hashicorp/terraform-ls), which contain details about this repo as well.
+**IMPORTANT:** Currently there are two Terraform LSP repositories one of which is this repository and one of which is [terraform-ls](https://github.com/hashicorp/terraform-ls). Terraform-LS also contains details about this repository as well.
 
 **Current Focus: Terraform State Reading**
 
