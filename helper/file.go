@@ -1,6 +1,11 @@
 package helper
 
 import (
+	"reflect"
+	"regexp"
+	"strings"
+	"unicode/utf8"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/terraform/configs"
@@ -9,10 +14,6 @@ import (
 	"github.com/sourcegraph/go-lsp"
 	"github.com/spf13/afero"
 	"github.com/zclconf/go-cty/cty"
-	"reflect"
-	"regexp"
-	"strings"
-	"unicode/utf8"
 )
 
 func CheckAndGetConfig(parser *configs.Parser, originalFile afero.File, line int, character int) (*configs.File, hcl.Diagnostics, int, *hclsyntax.Body, bool) {
@@ -21,12 +22,12 @@ func CheckAndGetConfig(parser *configs.Parser, originalFile afero.File, line int
 	pos := FindOffset(string(fileText), line, character)
 
 	tempFile, _ := afero.TempFile(memfs.MemFs, "", "check_tf_lsp")
-  found := false
+	found := false
 
-  if int64(pos) != -1 {
-    found = true
-    originalFile.ReadAt(result, int64(pos))
-  } 
+	if int64(pos) != -1 {
+		found = true
+		originalFile.ReadAt(result, int64(pos))
+	}
 
 	defer memfs.MemFs.Remove(tempFile.Name())
 
@@ -70,7 +71,7 @@ func FindOffset(fileText string, line, column int) int {
 		column = 1
 	}
 
-  //variable \"test\" {\n    \n}\n\n
+	//variable \"test\" {\n    \n}\n\n
 	currentCol := 1
 	currentLine := 1
 
@@ -124,7 +125,6 @@ func parseVariables(vars hcl.Traversal, configVarsType *cty.Type, completionItem
 		return completionItems
 	}
 
-
 	if !configVarsType.IsObjectType() {
 		if et := configVarsType.MapElementType(); et != nil {
 			return parseVariables(vars[1:], et, completionItems)
@@ -141,7 +141,7 @@ func parseVariables(vars hcl.Traversal, configVarsType *cty.Type, completionItem
 
 	if reflect.TypeOf(vars[0]) == hclstructs.TraverseAttr() {
 		varAttr := vars[0].(hcl.TraverseAttr)
-		if configVarsType.HasAttribute(varAttr.Name) {
+		if configVarsType.IsObjectType() && configVarsType.HasAttribute(varAttr.Name) {
 			attr := configVarsType.AttributeType(varAttr.Name)
 			return parseVariables(vars[1:], &attr, completionItems)
 		}
