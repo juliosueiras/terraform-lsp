@@ -1,18 +1,23 @@
 package helper
 
 import (
-	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/hashicorp/terraform/configs"
-	"github.com/juliosueiras/terraform-lsp/hclstructs"
-	"github.com/juliosueiras/terraform-lsp/memfs"
-	"github.com/sourcegraph/go-lsp"
-	"github.com/spf13/afero"
-	"github.com/zclconf/go-cty/cty"
 	"reflect"
 	"regexp"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/juliosueiras/terraform-lsp/hclstructs"
+	"github.com/juliosueiras/terraform-lsp/memfs"
+
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/hashicorp/terraform/configs"
+
+	"github.com/sourcegraph/go-lsp"
+
+	"github.com/spf13/afero"
+
+	"github.com/zclconf/go-cty/cty"
 )
 
 func CheckAndGetConfig(parser *configs.Parser, originalFile afero.File, line int, character int) (*configs.File, hcl.Diagnostics, int, *hclsyntax.Body, bool) {
@@ -21,12 +26,12 @@ func CheckAndGetConfig(parser *configs.Parser, originalFile afero.File, line int
 	pos := FindOffset(string(fileText), line, character)
 
 	tempFile, _ := afero.TempFile(memfs.MemFs, "", "check_tf_lsp")
-  found := false
+	found := false
 
-  if int64(pos) != -1 {
-    found = true
-    originalFile.ReadAt(result, int64(pos))
-  } 
+	if int64(pos) != -1 {
+		found = true
+		originalFile.ReadAt(result, int64(pos))
+	}
 
 	defer memfs.MemFs.Remove(tempFile.Name())
 
@@ -64,13 +69,20 @@ func CheckAndGetConfig(parser *configs.Parser, originalFile afero.File, line int
 	return resultConfig, diags, character, testRes.(*hclsyntax.Body), false
 }
 
+// FindOffset returns the offset corresponding to line and column for the
+// provided text
+//
 // credits: https://stackoverflow.com/questions/28008566/how-to-compute-the-offset-from-column-and-line-number-go
 func FindOffset(fileText string, line, column int) int {
+	if line < 1 || column < 0 {
+		// Avoid Unnecessary work if inputs are negative
+		return -1
+	}
+
 	if column == 0 {
 		column = 1
 	}
 
-  //variable \"test\" {\n    \n}\n\n
 	currentCol := 1
 	currentLine := 1
 
@@ -79,11 +91,15 @@ func FindOffset(fileText string, line, column int) int {
 			return offset
 		}
 
-		if ch == '\n' {
-			currentLine++
-			currentCol = 1
-		} else {
+		if ch != '\n' {
 			currentCol++
+			continue
+		}
+
+		currentLine++
+		currentCol = 1
+		if currentLine > line {
+			return -1
 		}
 	}
 	return -1
@@ -123,7 +139,6 @@ func parseVariables(vars hcl.Traversal, configVarsType *cty.Type, completionItem
 
 		return completionItems
 	}
-
 
 	if !configVarsType.IsObjectType() {
 		if et := configVarsType.MapElementType(); et != nil {
